@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Production build outputs
+dist/
+build/
+coverage/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log
+
+# OS and Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
