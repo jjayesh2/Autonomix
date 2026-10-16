@@ -1,46 +1,49 @@
-import React from 'react';
-import { useAuth, UserRole } from '../context/AuthContext.js';
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext.js';
 import { useSound } from '../context/SoundContext.js';
 import {
   Cpu,
-  ShoppingBag,
-  PlusCircle,
-  Code2,
-  ShieldCheck,
-  Receipt,
-  Settings,
   Volume2,
   VolumeX,
-  Wallet,
-  UserCheck,
+  LogOut,
+  User,
+  Shield,
+  Code,
+  Sparkles,
+  ChevronDown,
+  Settings,
+  HelpCircle,
 } from 'lucide-react';
 
 interface NavbarProps {
-  currentScreen: string;
   onNavigate: (screen: string) => void;
+  onRequestDeveloperModal?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ currentScreen, onNavigate }) => {
-  const { user, role, switchRole, logout } = useAuth();
+export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onRequestDeveloperModal }) => {
+  const { user, role, logout } = useAuth();
   const { soundEnabled, toggleSound, playClick } = useSound();
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const handleNav = (screen: string) => {
     playClick();
+    setUserDropdownOpen(false);
     onNavigate(screen);
   };
 
-  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    playClick();
-    switchRole(e.target.value as UserRole);
-  };
+  const roleBadgeConfig = {
+    customer: { label: 'Customer', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
+    developer: { label: 'Developer', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
+    admin: { label: 'Admin', color: 'bg-violet-500/10 text-violet-300 border-violet-500/20' },
+  }[role];
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md bg-[#080C14]/85 border-b border-slate-800/80 px-4 lg:px-8 py-3">
+    <header className="sticky top-0 z-40 backdrop-blur-md bg-[#080C14]/90 border-b border-slate-800/80 px-4 lg:px-8 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Brand / Logo */}
         <div
-          onClick={() => handleNav('landing')}
-          className="flex items-center gap-3 cursor-pointer group"
+          onClick={() => handleNav(user ? `${role}_overview` : 'landing')}
+          className="flex items-center gap-3 cursor-pointer group select-none"
         >
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-cyan-400 p-[1px] shadow-glow-violet">
             <div className="w-full h-full bg-[#080C14] rounded-xl flex items-center justify-center group-hover:bg-[#0D1527] transition-colors">
@@ -60,95 +63,23 @@ export const Navbar: React.FC<NavbarProps> = ({ currentScreen, onNavigate }) => 
           </div>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1 bg-slate-900/60 p-1 rounded-xl border border-slate-800">
-          <button
-            onClick={() => handleNav('marketplace')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              currentScreen === 'marketplace'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <ShoppingBag className="w-4 h-4" />
-            Marketplace
-          </button>
-
-          <button
-            onClick={() => handleNav('create_task')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              currentScreen === 'create_task'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <PlusCircle className="w-4 h-4" />
-            Create Task
-          </button>
-
-          {(role === 'developer' || role === 'admin') && (
-            <button
-              onClick={() => handleNav('developer_dashboard')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                currentScreen === 'developer_dashboard' || currentScreen === 'submit_agent'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
-            >
-              <Code2 className="w-4 h-4" />
-              Dev Studio
-            </button>
-          )}
-
-          {role === 'admin' && (
-            <button
-              onClick={() => handleNav('admin_dashboard')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                currentScreen === 'admin_dashboard'
-                  ? 'bg-violet-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4 text-violet-300" />
-              Admin Review
-            </button>
-          )}
-
-          <button
-            onClick={() => handleNav('settings')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              currentScreen === 'settings'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            Settings
-          </button>
-        </nav>
-
-        {/* Right Actions: Role Selector, Sound Toggle, Wallet, Account */}
-        <div className="flex items-center gap-3">
-          {/* Quick Role Switcher (Ideal for hackathon evaluation) */}
-          <div className="flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800 text-xs text-slate-300">
-            <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">Role:</span>
-            <select
-              value={role}
-              onChange={handleRoleChange}
-              className="bg-transparent border-none text-xs font-semibold focus:outline-none cursor-pointer capitalize text-indigo-400"
-            >
-              <option value="customer" className="bg-[#0F1626] text-slate-200">Customer</option>
-              <option value="developer" className="bg-[#0F1626] text-slate-200">Developer</option>
-              <option value="admin" className="bg-[#0F1626] text-slate-200">Admin</option>
-            </select>
+        {/* Center / Role Badge (Informational Only - NO DROPDOWN TO CHANGE IDENTITY) */}
+        {user && (
+          <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/60 border border-slate-800 text-xs">
+            <span className="text-slate-400 text-[11px]">Workspace:</span>
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold uppercase border ${roleBadgeConfig.color}`}>
+              {roleBadgeConfig.label}
+            </span>
           </div>
+        )}
 
+        {/* Right Actions: Sound Toggle, Base Sepolia Network, Account Dropdown */}
+        <div className="flex items-center gap-3">
           {/* Sound Toggle (Web Audio tones - No Voice) */}
           <button
             onClick={toggleSound}
             title={soundEnabled ? 'Notification tones enabled (click to mute)' : 'Notification tones muted (click to enable)'}
-            className={`p-2 rounded-lg border text-xs transition-colors ${
+            className={`p-2 rounded-xl border text-xs transition-colors ${
               soundEnabled
                 ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20'
                 : 'bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-400'
@@ -157,23 +88,94 @@ export const Navbar: React.FC<NavbarProps> = ({ currentScreen, onNavigate }) => 
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
 
-          {/* Wallet / Network Pill */}
-          <div className="hidden lg:flex items-center gap-2 bg-slate-900/70 border border-slate-800 px-3 py-1.5 rounded-lg text-xs font-mono">
+          {/* Network Pill (Base Sepolia 84532) */}
+          <div className="hidden lg:flex items-center gap-2 bg-slate-900/70 border border-slate-800 px-3 py-1.5 rounded-xl text-xs font-mono">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-slate-400">Base Sepolia</span>
+            <span className="text-slate-300">Base Sepolia</span>
             <span className="text-slate-600">|</span>
-            <span className="text-slate-300">
+            <span className="text-slate-400">
               {user?.walletAddress ? `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}` : '0x90F...b906'}
             </span>
           </div>
 
-          {/* Auth Button */}
-          <button
-            onClick={() => handleNav('auth')}
-            className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg font-medium transition-colors border border-slate-700"
-          >
-            {user ? user.displayName : 'Sign In'}
-          </button>
+          {/* User Account / Dropdown */}
+          {user ? (
+            <div className="relative">
+              <button
+                onClick={() => {
+                  playClick();
+                  setUserDropdownOpen(!userDropdownOpen);
+                }}
+                className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium border border-slate-700/80 transition-colors"
+              >
+                <div className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">
+                  {user.displayName.charAt(0).toUpperCase()}
+                </div>
+                <span className="max-w-[120px] truncate">{user.displayName}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+
+              {userDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-[#0F1626] border border-slate-800 shadow-2xl py-2 z-50 text-xs">
+                  <div className="px-4 py-2 border-b border-slate-800">
+                    <p className="text-white font-bold truncate">{user.displayName}</p>
+                    <p className="text-slate-400 text-[11px] truncate font-mono">{user.email}</p>
+                    <span className={`inline-block mt-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${roleBadgeConfig.color}`}>
+                      {role} Account
+                    </span>
+                  </div>
+
+                  <div className="py-1">
+                    <button
+                      onClick={() => handleNav(`${role}_settings`)}
+                      className="w-full px-4 py-2 text-left text-slate-300 hover:bg-slate-800 flex items-center gap-2"
+                    >
+                      <Settings className="w-3.5 h-3.5 text-slate-400" />
+                      Settings & Preferences
+                    </button>
+
+                    {role === 'customer' && onRequestDeveloperModal && (
+                      <button
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          playClick();
+                          onRequestDeveloperModal();
+                        }}
+                        className="w-full px-4 py-2 text-left text-indigo-400 hover:bg-slate-800 flex items-center gap-2 font-medium"
+                      >
+                        <Code className="w-3.5 h-3.5" />
+                        Request Developer Access
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="border-t border-slate-800 pt-1">
+                    <button
+                      onClick={async () => {
+                        playClick();
+                        setUserDropdownOpen(false);
+                        await logout();
+                        onNavigate('auth');
+                      }}
+                      className="w-full px-4 py-2 text-left text-rose-400 hover:bg-slate-800 flex items-center gap-2"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleNav('auth')}
+                className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-xl font-semibold shadow-glow-accent transition-all"
+              >
+                Sign In
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

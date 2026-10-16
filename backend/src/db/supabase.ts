@@ -10,6 +10,7 @@ import {
   AgentMetrics,
   Profile,
   AuditLog,
+  UserRole,
 } from './types.js';
 
 let supabaseClient: SupabaseClient | null = null;
@@ -510,4 +511,122 @@ export const db = {
     }
     return [...inMemoryAuditLogs].reverse().slice(0, 50);
   },
+
+  async getAllProfiles(): Promise<Profile[]> {
+    if (supabaseClient) {
+      const { data, error } = await supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
+      if (!error && data) return data as Profile[];
+    }
+    return Array.from(inMemoryProfiles.values());
+  },
+
+  async updateProfileRole(userId: string, newRole: UserRole): Promise<Profile | null> {
+    if (supabaseClient) {
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .update({ role: newRole, updated_at: new Date().toISOString() })
+        .eq('id', userId)
+        .select()
+        .single();
+      if (!error && data) return data as Profile;
+    }
+    const existing = inMemoryProfiles.get(userId);
+    if (!existing) return null;
+    const updated = { ...existing, role: newRole, updated_at: new Date().toISOString() };
+    inMemoryProfiles.set(userId, updated);
+    return updated;
+  },
+
+  async getDeveloperExecutions(developerId?: string, agentId?: string, status?: string): Promise<any[]> {
+    // Collect all steps from tasks
+    let allSteps: any[] = [];
+    const agents = await this.getApprovedAgents();
+    const developerAgentMap = new Map(agents.map((a) => [a.id, a]));
+
+    for (const [taskId, steps] of inMemorySteps.entries()) {
+      const task = inMemoryTasks.get(taskId);
+      for (const step of steps) {
+        const agent = step.agent_id ? developerAgentMap.get(step.agent_id) : undefined;
+        // If developerId is specified, filter to steps where agent's developer_id matches
+        if (developerId && agent && agent.developer_id !== developerId) {
+          continue;
+        }
+        allSteps.push({
+          ...step,
+          task_title: task?.title || 'Autonomous Task',
+          task_description: task?.description || '',
+          developer_id: agent?.developer_id,
+          agent_category: agent?.category,
+        });
+      }
+    }
+
+    if (agentId) {
+      allSteps = allSteps.filter((s) => s.agent_id === agentId);
+    }
+    if (status) {
+      allSteps = allSteps.filter((s) => s.status === status);
+    }
+
+    return allSteps.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  },
+
+  async getAllExecutions(status?: string): Promise<any[]> {
+    return this.getDeveloperExecutions(undefined, undefined, status);
+  },
+
+  async getDeveloperEarnings(developerId: string): Promise<any> {
+    const agents = (await this.getApprovedAgents()).filter((a) => a.developer_id === developerId);
+    const agentIds = new Set(agents.map((a) => a.id));
+
+    let grossRevenue = 0;
+    let completedCalls = 0;
+    const agentBreakdown: Record<string, { name: string; calls: number; gross: number; net: number }> = {};
+
+    for (const a of agents) {
+      agentBreakdown[a.id] = { name: a.name, calls: 0, gross: 0, net: 0 };
+    }
+
+    for (const txList of inMemoryTransactions.values()) {
+      for (const tx of txList) {
+        if (tx.agent_id && agentIds.has(tx.agent_id) && tx.payment_status === 'confirmed') {
+          const amount = tx.amount_usdc;
+          grossRevenue += amount;
+          completedCalls++;
+          if (agentBreakdown[tx.agent_id]) {
+            agentBreakdown[tx.agent_id].calls += 1;
+            agentBreakdown[tx.agent_id].gross += amount;
+            agentBreakdown[tx.agent_id].net += amount * 0.90;
+          }
+        }
+      }
+    }
+
+    const platformFee = Number((grossRevenue * 0.10).toFixed(4));
+    const netEarnings = Number((grossRevenue - platformFee).toFixed(4));
+
+    return {
+      developerId,
+      grossRevenue: Number(grossRevenue.toFixed(4)),
+      platformFee,
+      netEarnings,
+      completedCalls,
+      agentBreakdown: Object.values(agentBreakdown),
+      currency: 'USDC (Base Sepolia)',
+    };
+  },
+
+  async createFundingOrder(order: any): Promise<any> {
+    inMemoryAuditLogs.push({
+      id: `audit-${Date.now()}`,
+      actor_id: order.user_id,
+      action: 'CREATE_FUNDING_ORDER',
+      target_type: 'wallet_funding',
+      target_id: order.id,
+      details: { amount: order.amount, method: order.method, currency: order.currency },
+      created_at: new Date().toISOString(),
+    });
+    return order;
+  },
 };
+

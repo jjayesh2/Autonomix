@@ -12,11 +12,24 @@ import {
   ShieldCheck,
   Receipt,
   ExternalLink,
+  ChevronRight,
+  Code2,
+  Sparkles,
+  Layers,
+  Zap,
 } from 'lucide-react';
 
 interface LiveExecutionPageProps {
   taskId: string | null;
   onNavigate: (screen: string) => void;
+}
+
+interface PipelineNode {
+  id: number;
+  label: string;
+  sublabel: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  icon: any;
 }
 
 export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, onNavigate }) => {
@@ -25,6 +38,7 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [remainingBudget, setRemainingBudget] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [selectedNode, setSelectedNode] = useState<number | null>(null);
 
   const { playClick, playSuccess, playError, playProgress } = useSound();
   const [prevCompletedCount, setPrevCompletedCount] = useState(0);
@@ -65,7 +79,6 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
     };
 
     fetchStatus();
-    // Poll every 1.5 seconds while task is active
     const interval = setInterval(fetchStatus, 1500);
     return () => clearInterval(interval);
   }, [taskId, prevCompletedCount, hasPlayedFinishTone]);
@@ -81,7 +94,7 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
             playClick();
             onNavigate('create_task');
           }}
-          className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs"
+          className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-colors"
         >
           Create Task
         </button>
@@ -90,21 +103,72 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
   }
 
   const isFinished = task && ['completed', 'failed', 'partially_completed'].includes(task.status);
+  const completedStepCount = steps.filter((s) => s.status === 'completed').length;
+  const runningStep = steps.find((s) => s.status === 'running');
+
+  // Compute node statuses for the interactive graph
+  const getPipelineNodes = (): PipelineNode[] => {
+    const isFailed = task?.status === 'failed';
+    const hasStarted = !!task;
+
+    let s1Status: 'pending' | 'running' | 'completed' | 'failed' = hasStarted ? 'completed' : 'pending';
+    let s2Status: 'pending' | 'running' | 'completed' | 'failed' = 'pending';
+    let s3Status: 'pending' | 'running' | 'completed' | 'failed' = 'pending';
+    let s4Status: 'pending' | 'running' | 'completed' | 'failed' = 'pending';
+    let s5Status: 'pending' | 'running' | 'completed' | 'failed' = 'pending';
+    let s6Status: 'pending' | 'running' | 'completed' | 'failed' = 'pending';
+
+    if (task?.status === 'planning') {
+      s2Status = 'running';
+    } else if (task?.status === 'in_progress') {
+      s2Status = 'completed';
+      s3Status = 'completed';
+      if (runningStep) {
+        s4Status = 'completed';
+        s5Status = 'running';
+      } else {
+        s4Status = 'running';
+      }
+    } else if (task?.status === 'completed') {
+      s2Status = 'completed';
+      s3Status = 'completed';
+      s4Status = 'completed';
+      s5Status = 'completed';
+      s6Status = 'completed';
+    } else if (isFailed) {
+      s2Status = s2Status === 'pending' ? 'failed' : s2Status;
+      s3Status = s3Status === 'pending' ? 'failed' : s3Status;
+      s4Status = s4Status === 'pending' ? 'failed' : s4Status;
+      s5Status = s5Status === 'pending' ? 'failed' : s5Status;
+      s6Status = 'failed';
+    }
+
+    return [
+      { id: 1, label: 'Task Ingestion', sublabel: 'Prompt & Budget Guard', status: s1Status, icon: Layers },
+      { id: 2, label: 'Orchestrator Planning', sublabel: 'Decomposition & Graph', status: s2Status, icon: Cpu },
+      { id: 3, label: 'Agent Selection', sublabel: 'Reputation & Cost Cap', status: s3Status, icon: Sparkles },
+      { id: 4, label: 'HTTP 402 Challenge', sublabel: 'EIP-712 Signing', status: s4Status, icon: Zap },
+      { id: 5, label: 'Execution & Ajv', sublabel: 'Strict JSON Validation', status: s5Status, icon: Code2 },
+      { id: 6, label: 'Result Synthesis', sublabel: 'Ledger Reconciled', status: s6Status, icon: ShieldCheck },
+    ];
+  };
+
+  const pipelineNodes = getPipelineNodes();
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-mono mb-2 border border-cyan-500/20">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <span>Autonomous Execution Trace</span>
+            <span>Autonomous Orchestration Trace</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Live Task Orchestration
+            Live Execution & Settlement Graph
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-xl truncate">
-            {task?.description || 'Executing task requirements...'}
+            {task?.description || 'Executing task requirements across discovered agents...'}
           </p>
         </div>
 
@@ -116,7 +180,7 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
             }}
             className="self-start sm:self-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-glow-accent transition-all flex items-center gap-2"
           >
-            <span>View Full Results & Cost Breakdown</span>
+            <span>View Final Brief & Cost Itemization</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         )}
@@ -161,23 +225,130 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
         </div>
       </div>
 
-      {/* Execution Timeline (Section 6 requirements) */}
+      {/* INTERACTIVE NODE PIPELINE GRAPH */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-indigo-500/30 space-y-6 relative overflow-hidden">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span>Multi-Agent Orchestration Pipeline Graph</span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Live progression of the buyer agent coordinating discovery, cryptographic payment handshakes, and result validation.
+            </p>
+          </div>
+          <span className="text-[11px] font-mono text-indigo-400 font-semibold px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
+            Base Sepolia • Chain 84532
+          </span>
+        </div>
+
+        {/* Pipeline Nodes Row */}
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 pt-2">
+          {pipelineNodes.map((node, index) => {
+            const Icon = node.icon;
+            const isRunning = node.status === 'running';
+            const isCompleted = node.status === 'completed';
+            const isFailed = node.status === 'failed';
+            const isSelected = selectedNode === node.id;
+
+            return (
+              <div
+                key={node.id}
+                onClick={() => {
+                  playClick();
+                  setSelectedNode(isSelected ? null : node.id);
+                }}
+                className={`relative p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                  isSelected
+                    ? 'ring-2 ring-cyan-400 bg-slate-900 border-cyan-500/50'
+                    : isRunning
+                    ? 'bg-cyan-950/30 border-cyan-500/50 shadow-glow-cyan'
+                    : isCompleted
+                    ? 'bg-slate-900/80 border-emerald-500/30 hover:border-slate-700'
+                    : isFailed
+                    ? 'bg-rose-950/20 border-rose-500/30'
+                    : 'bg-slate-900/40 border-slate-800 opacity-60 hover:opacity-80'
+                }`}
+              >
+                {/* Node Status Badge */}
+                <div className="flex items-center justify-between mb-2">
+                  <div
+                    className={`w-7 h-7 rounded-xl flex items-center justify-center ${
+                      isRunning
+                        ? 'bg-cyan-500/20 text-cyan-400 animate-pulse'
+                        : isCompleted
+                        ? 'bg-emerald-500/20 text-emerald-400'
+                        : isFailed
+                        ? 'bg-rose-500/20 text-rose-400'
+                        : 'bg-slate-800 text-slate-500'
+                    }`}
+                  >
+                    {isRunning ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : isCompleted ? (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    ) : isFailed ? (
+                      <AlertCircle className="w-3.5 h-3.5" />
+                    ) : (
+                      <Icon className="w-3.5 h-3.5" />
+                    )}
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-500">0{node.id}</span>
+                </div>
+
+                <div className="text-xs font-bold text-white truncate">{node.label}</div>
+                <div className="text-[10px] text-slate-400 truncate mt-0.5">{node.sublabel}</div>
+
+                {isRunning && (
+                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Selected Node Details Drawer */}
+        {selectedNode && (
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-xs space-y-2">
+            <div className="flex items-center justify-between text-slate-300 font-bold">
+              <span>Stage {selectedNode} Deep Dive: {pipelineNodes[selectedNode - 1].label}</span>
+              <button onClick={() => setSelectedNode(null)} className="text-slate-500 hover:text-white">
+                ✕
+              </button>
+            </div>
+            <p className="text-slate-400 text-[11px]">
+              {selectedNode === 1 && 'The natural language prompt is checked against the maximum budget limit. An atomic budget reservation is locked in the customer wallet to guarantee solvency.'}
+              {selectedNode === 2 && 'The buyer orchestrator invokes planning algorithms to analyze required capabilities (Data, Inference, Scraping) and constructs the sequential DAG execution graph.'}
+              {selectedNode === 3 && 'Marketplace agents are queried and ranked by composite score = 0.35 * price + 0.35 * reputation + 0.30 * latency, strictly checking admin approval status.'}
+              {selectedNode === 4 && 'The orchestrator triggers HTTP 402 Pay-per-Call handshake: recipient address, nonce, and price are bound to an EIP-712 signed authorization payload.'}
+              {selectedNode === 5 && 'The agent executes its model/tool pipeline. The returned JSON is strictly validated using Ajv (Draft-07) against the agent’s registered output schema.'}
+              {selectedNode === 6 && 'All validated intermediate outputs are synthesized into the final answer. Unspent budget is released back to available balance and transactions are recorded.'}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Execution Timeline & Steps */}
       <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-6">
         <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-indigo-400" />
-          Autonomous Execution Timeline & x402 Micropayments
+          <span>Live Executed Steps & x402 Micropayments</span>
         </h3>
 
-        {/* 9-Stage Architecture Overview */}
         <div className="space-y-4">
-          {/* Step 1 & 2: Initiation & Planning */}
+          {/* Step 1: Ingestion & Planning */}
           <div className="flex items-start gap-4">
             <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <div className="pt-1">
               <h4 className="text-xs font-bold text-white">Stage 1: Requirements Ingested & Plan Formulated</h4>
-              <p className="text-xs text-slate-400 mt-0.5">{task?.rationale || 'Analyzing natural language requirements and discovering approved agents...'}</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {task?.rationale || 'Analyzing natural language requirements and discovering approved agents...'}
+              </p>
             </div>
           </div>
 
@@ -211,8 +382,11 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
                     <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-400">
                       {step.action_type}
                     </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      Ajv Validated ✓
+                    </span>
                   </div>
-                  <div className="text-xs font-mono text-emerald-400">
+                  <div className="text-xs font-mono text-emerald-400 font-bold">
                     +{step.price_paid.toFixed(2)} USDC
                   </div>
                 </div>
@@ -220,7 +394,7 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
                 <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-400 pt-1 font-mono">
                   <span>Latency: ~{step.latency_ms}ms</span>
                   <span>|</span>
-                  <span>Payment: HTTP 402 Verified</span>
+                  <span className="text-cyan-400">Payment: HTTP 402 Verified</span>
                   {step.tx_hash && (
                     <>
                       <span>|</span>
@@ -263,9 +437,9 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
                 <CheckCircle2 className="w-4 h-4" />
               </div>
               <div className="pt-1">
-                <h4 className="text-xs font-bold text-white">Stage 9: Task Results Formatted & Budget Reconciled</h4>
+                <h4 className="text-xs font-bold text-white">Stage 6: Task Results Formatted & Budget Reconciled</h4>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  All service outputs have been verified against output schemas and combined into the final brief.
+                  All service outputs verified against output schemas and combined into the final brief. Uncommitted budget has been safely restored.
                 </p>
               </div>
             </div>

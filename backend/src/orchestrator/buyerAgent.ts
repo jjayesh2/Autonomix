@@ -4,6 +4,8 @@ import { budgetGuard } from '../payments/budgetGuard.js';
 import { x402Engine, X402PaymentRequirement } from '../payments/x402Protocol.js';
 import { validateSchema } from '../utils/schemaValidator.js';
 import { Agent, Task, TaskStep, Transaction } from '../db/types.js';
+import { aiService } from '../ai/aiService.js';
+import { TokenUsage } from '../ai/types.js';
 
 export interface PlannedStep {
   stepNumber: number;
@@ -20,105 +22,87 @@ export interface OrchestrationPlan {
   budgetLimit: number;
   canExecute: boolean;
   explanation: string;
+  aiMetadata?: {
+    model: string;
+    provider: string;
+    usage?: TokenUsage;
+    costUsd: number;
+    latencyMs: number;
+  };
 }
 
 export class BuyerAgentOrchestrator {
   /**
-   * Analyzes user task description, matches approved marketplace agents,
-   * evaluates quality metrics, and plans the minimal cost-effective execution path.
+   * Analyzes user task description using Google Gemini / AI Service,
+   * matches approved marketplace agents, and plans the minimal cost-effective execution path.
    */
   async planTask(description: string, budgetLimit: number): Promise<OrchestrationPlan> {
-    const lower = description.toLowerCase();
     const approvedAgents = await db.getApprovedAgents();
-
-    const selectedAgents: Agent[] = [];
-
-    // Match Data Agent capability
-    const needsData = lower.includes('data') || lower.includes('market') || lower.includes('price') ||
-      lower.includes('crypto') || lower.includes('eth') || lower.includes('btc') || lower.includes('oracle') ||
-      lower.includes('financial') || lower.includes('multi-agent') || lower.includes('all three');
-
-    // Match Scraping Agent capability
-    const needsScraper = lower.includes('scrap') || lower.includes('extract') || lower.includes('web') ||
-      lower.includes('product') || lower.includes('catalog') || lower.includes('hardware') ||
-      lower.includes('crawl') || lower.includes('multi-agent') || lower.includes('all three');
-
-    // Match Inference Agent capability
-    const needsInference = lower.includes('summar') || lower.includes('synthes') || lower.includes('analyz') ||
-      lower.includes('report') || lower.includes('sentiment') || lower.includes('brief') ||
-      lower.includes('multi-agent') || lower.includes('all three') || (needsData && needsScraper);
-
-    // If query didn't match specific keywords, default to multi-agent comprehensive workflow
-    const isGeneric = !needsData && !needsScraper && !needsInference;
-
-    const dataAgent = approvedAgents.find((a) => a.category === 'Data');
-    const scraperAgent = approvedAgents.find((a) => a.category === 'Scraping');
-    const inferenceAgent = approvedAgents.find((a) => a.category === 'Inference');
-
-    if ((needsData || isGeneric) && dataAgent) selectedAgents.push(dataAgent);
-    if ((needsScraper || isGeneric) && scraperAgent) selectedAgents.push(scraperAgent);
-    if ((needsInference || isGeneric) && inferenceAgent) selectedAgents.push(inferenceAgent);
-
-    // Fallback: If still empty, pick the lowest price approved agent
-    if (selectedAgents.length === 0 && approvedAgents.length > 0) {
-      selectedAgents.push(approvedAgents[0]);
+    if (approvedAgents.length === 0) {
+      return {
+        steps: [],
+        totalEstimatedCost: 0,
+        budgetLimit,
+        canExecute: false,
+        explanation: 'No approved agents currently available in the marketplace.',
+      };
     }
 
-    // Sort steps logically: Data -> Scraping -> Inference
-    const categoryOrder: Record<string, number> = { Data: 1, Scraping: 2, Inference: 3 };
-    selectedAgents.sort((a, b) => (categoryOrder[a.category] || 99) - (categoryOrder[b.category] || 99));
+    // Call the server-side AI Service to plan the task using Gemini or fallback
+    const aiPlanResult = await aiService.planTaskWithAI(description, budgetLimit, approvedAgents);
+    const structuredPlan = aiPlanResult.data;
 
-    const steps: PlannedStep[] = [];
-    let runningCost = 0;
+    const plannedSteps: PlannedStep[] = [];
+    let runningServiceCost = 0;
 
-    for (let i = 0; i < selectedAgents.length; i++) {
-      const agent = selectedAgents[i];
-      runningCost += agent.price_usdc;
-
-      let action = 'Data Query';
-      let payload: any = { query: 'ETH' };
-      let rationale = `Selected ${agent.name} for high reliability (${agent.metrics?.rating_average || 5.0}★) and lowest price in ${agent.category} category.`;
-
-      if (agent.category === 'Data') {
-        action = 'Oracle Price Feed Retrieval';
-        payload = { query: lower.includes('btc') ? 'BTC' : lower.includes('base') ? 'BASE' : 'ETH' };
-      } else if (agent.category === 'Scraping') {
-        action = 'Sandbox Catalog Extraction';
-        payload = { target: 'hardware', extract_fields: ['title', 'price', 'url'] };
-        rationale = `Selected ${agent.name} to retrieve sandboxed public product catalog items without unauthorized scraping.`;
-      } else if (agent.category === 'Inference') {
-        action = 'AI Multi-Agent Synthesis';
-        payload = { task_goal: description, format: 'executive_summary' };
-        rationale = `Selected ${agent.name} to synthesize preceding agent outputs into a verified final briefing.`;
+    for (let i = 0; i < structuredPlan.steps.length; i++) {
+      const stepItem = structuredPlan.steps[i];
+      // Match agent by ID or by category
+      let matchedAgent = approvedAgents.find((a) => a.id === stepItem.agentId);
+      if (!matchedAgent) {
+        matchedAgent = approvedAgents.find((a) => a.category === stepItem.category) || approvedAgents[0];
       }
 
-      steps.push({
+      const cost = matchedAgent.price_usdc;
+      runningServiceCost += cost;
+
+      plannedSteps.push({
         stepNumber: i + 1,
-        agent,
-        actionType: action,
-        rationale,
-        estimatedCost: agent.price_usdc,
-        inputPayload: payload,
+        agent: matchedAgent,
+        actionType: stepItem.actionType || `${matchedAgent.category} Service Execution`,
+        rationale: stepItem.rationale || `Selected ${matchedAgent.name} based on capability matching.`,
+        estimatedCost: cost,
+        inputPayload: stepItem.inputPayload || {},
       });
     }
 
-    const totalEstimatedCost = Number(runningCost.toFixed(4));
-    const canExecute = totalEstimatedCost <= budgetLimit;
+    // Enforce total budget limit: sum of seller service costs + model provider costs
+    const totalEstimatedCost = Number((runningServiceCost + (aiPlanResult.costUsd || 0)).toFixed(4));
+    const canExecute = totalEstimatedCost <= budgetLimit && plannedSteps.length > 0;
+
     const explanation = canExecute
-      ? `Task plan verified within budget. Selected ${steps.length} specialized service agents totaling ${totalEstimatedCost} USDC against ${budgetLimit} USDC max budget.`
-      : `Budget Insufficient: Planned execution requires ${totalEstimatedCost} USDC, but budget limit is ${budgetLimit} USDC.`;
+      ? `Task plan verified within budget. Selected ${plannedSteps.length} specialized service agents totaling ${totalEstimatedCost} USDC against ${budgetLimit} USDC budget (Planned by ${aiPlanResult.model}).`
+      : `Budget Insufficient: Planned multi-agent execution requires ${totalEstimatedCost} USDC, but budget limit is capped at ${budgetLimit} USDC.`;
 
     return {
-      steps,
+      steps: plannedSteps,
       totalEstimatedCost,
       budgetLimit,
       canExecute,
       explanation,
+      aiMetadata: {
+        model: aiPlanResult.model,
+        provider: aiPlanResult.provider,
+        usage: aiPlanResult.usage,
+        costUsd: aiPlanResult.costUsd,
+        latencyMs: aiPlanResult.latencyMs,
+      },
     };
   }
 
   /**
-   * Executes an orchestrated task end-to-end with x402 v2 payment flows and strict budget locking.
+   * Executes an orchestrated task end-to-end with x402 v2 payment flows, strict budget locking,
+   * and live Base Sepolia telemetry.
    */
   async executeTask(taskId: string): Promise<Task> {
     const task = await db.getTaskById(taskId);
@@ -126,7 +110,9 @@ export class BuyerAgentOrchestrator {
 
     await db.updateTask(taskId, { status: 'planning' });
 
-    const plan: OrchestrationPlan = task.orchestration_plan || (await this.planTask(task.description, task.budget_limit));
+    const plan: OrchestrationPlan =
+      task.orchestration_plan || (await this.planTask(task.description, task.budget_limit));
+
     if (!plan.canExecute) {
       await db.updateTask(taskId, {
         status: 'failed',
@@ -142,6 +128,11 @@ export class BuyerAgentOrchestrator {
       rationale: plan.explanation,
     });
 
+    // Record server-side model provider planning cost against total budget
+    if (plan.aiMetadata?.costUsd && plan.aiMetadata.costUsd > 0) {
+      await budgetGuard.recordModelCost(taskId, plan.aiMetadata.costUsd);
+    }
+
     const accumulatedContexts: string[] = [];
     let successfulCount = 0;
 
@@ -151,7 +142,6 @@ export class BuyerAgentOrchestrator {
       // 1. Concurrency-safe atomic budget reservation
       const reservation = await budgetGuard.reserveBudget(taskId, step.agent.id, step.estimatedCost);
       if (!reservation.success) {
-        // Record failed step due to budget
         await db.createTaskStep({
           id: `step_${taskId}_${step.stepNumber}`,
           task_id: taskId,
@@ -162,7 +152,7 @@ export class BuyerAgentOrchestrator {
           status: 'failed',
           latency_ms: 0,
           price_paid: 0,
-          error_message: reservation.error || 'Budget reservation failed',
+          error_message: reservation.error || 'Budget reservation limit exceeded',
           created_at: new Date().toISOString(),
         });
         break;
@@ -183,7 +173,7 @@ export class BuyerAgentOrchestrator {
         created_at: new Date().toISOString(),
       });
 
-      // Prepare payload (augment inference with previous outputs)
+      // Prepare request payload (augment inference step with preceding outputs)
       let requestPayload = { ...step.inputPayload };
       if (step.agent.category === 'Inference' && accumulatedContexts.length > 0) {
         requestPayload.context = accumulatedContexts.join('\n---\n');
@@ -223,7 +213,7 @@ export class BuyerAgentOrchestrator {
 
         // 5. Send signed payment authorization to fulfill service
         const serviceResponse = await axios.post(step.agent.endpoint_url, requestPayload, {
-          timeout: 10000,
+          timeout: 12000,
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${Buffer.from(JSON.stringify(authorization)).toString('base64')}`,
@@ -234,7 +224,7 @@ export class BuyerAgentOrchestrator {
         const latencyMs = Date.now() - stepStartTime;
         const resultData = serviceResponse.data;
 
-        // 6. Validate output against agent output schema
+        // 6. Validate output against registered agent output schema (Ajv)
         const schemaValidation = validateSchema(step.agent.output_schema, resultData);
         if (!schemaValidation.isValid) {
           console.warn(`[Orchestrator] Schema warning for ${step.agent.name}:`, schemaValidation.errors);
@@ -281,7 +271,6 @@ export class BuyerAgentOrchestrator {
         accumulatedContexts.push(`Agent [${step.agent.name}] output: ${JSON.stringify(resultData)}`);
         successfulCount++;
       } catch (stepErr: any) {
-        // Release reservation upon failure
         if (reservation.reservationId) {
           budgetGuard.releaseReservation(reservation.reservationId);
         }
@@ -306,11 +295,7 @@ export class BuyerAgentOrchestrator {
         ? 'partially_completed'
         : 'failed';
 
-    // Store synthesized final results
-    const lastContext = accumulatedContexts.length > 0
-      ? accumulatedContexts[accumulatedContexts.length - 1]
-      : 'No outputs generated';
-
+    // Store synthesized final results with real AI model details
     await db.createTaskResult({
       id: `res_${taskId}`,
       task_id: taskId,
@@ -319,6 +304,9 @@ export class BuyerAgentOrchestrator {
         taskGoal: task.description,
         totalSteps: plan.steps.length,
         successfulSteps: successfulCount,
+        aiPlanningModel: plan.aiMetadata?.model || 'Gemini 3.5 Flash-Lite',
+        aiPlanningCostUsd: plan.aiMetadata?.costUsd || 0,
+        aiPlanningTokens: plan.aiMetadata?.usage?.totalTokens || 0,
         contexts: accumulatedContexts,
         completedAt: new Date().toISOString(),
       },

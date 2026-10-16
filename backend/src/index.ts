@@ -8,6 +8,7 @@ import { developerRouter } from './routes/developer.js';
 import { adminRouter } from './routes/admin.js';
 import { transactionsRouter } from './routes/transactions.js';
 import { profileRouter } from './routes/profile.js';
+import { walletRouter } from './routes/wallet.js';
 import { handleDataAgentService } from './sellers/dataAgent.js';
 import { handleScraperAgentService } from './sellers/scraperAgent.js';
 import { handleInferenceAgentService } from './sellers/inferenceAgent.js';
@@ -32,6 +33,7 @@ app.use('/api/developer', developerRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/transactions', transactionsRouter);
 app.use('/api/profile', profileRouter);
+app.use('/api/wallet', walletRouter);
 
 // Centralized Error Handling
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

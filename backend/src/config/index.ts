@@ -49,7 +49,13 @@ export const config: AppConfig = {
     url: supabaseUrl,
     anonKey: supabaseAnonKey,
     serviceRoleKey: supabaseServiceKey,
-    isConfigured: Boolean(supabaseUrl && supabaseUrl.startsWith('http') && supabaseServiceKey),
+    isConfigured: Boolean(
+      supabaseUrl &&
+        supabaseUrl.startsWith('http') &&
+        !supabaseUrl.includes('your-project') &&
+        supabaseServiceKey &&
+        !supabaseServiceKey.includes('your_service_role_key')
+    ),
   },
   web3: {
     chainId: parseInt(process.env.CHAIN_ID || '84532', 10),
