@@ -23,7 +23,7 @@ interface SettingsPageProps {
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate }) => {
-  const { user, role, switchRole, logout } = useAuth();
+  const { user, role, logout } = useAuth();
   const { soundEnabled, toggleSound, playClick, playSuccess, playError, playProgress } = useSound();
 
   const [health, setHealth] = useState<any>(null);
@@ -98,27 +98,17 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* Quick Role Switcher */}
-        <div>
-          <span className="text-xs text-slate-400 block mb-2 font-medium">Switch Active Access Role:</span>
-          <div className="grid grid-cols-3 gap-3">
-            {(['customer', 'developer', 'admin'] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => {
-                  playClick();
-                  switchRole(r);
-                }}
-                className={`py-2 px-3 rounded-xl text-xs font-semibold capitalize border transition-all ${
-                  role === r
-                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                }`}
-              >
-                {r}
-              </button>
-            ))}
+        {/* Verified Server Role */}
+        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+          <div>
+            <span className="text-xs text-slate-300 font-semibold block">Active Security Role</span>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Assigned and verified server-side via Supabase Auth & Row Level Security.
+            </p>
           </div>
+          <span className="px-3 py-1 rounded-full text-xs font-mono font-bold uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            {role}
+          </span>
         </div>
       </div>
 

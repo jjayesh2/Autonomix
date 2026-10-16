@@ -173,3 +173,55 @@ developerRouter.get('/analytics', async (req: Request, res: Response) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// GET /api/developer/executions - Real-time execution traces for developer's agents
+developerRouter.get('/executions', async (req: Request, res: Response) => {
+  try {
+    const developerId = req.query.developerId ? String(req.query.developerId) : undefined;
+    const agentId = req.query.agentId ? String(req.query.agentId) : undefined;
+    const status = req.query.status ? String(req.query.status) : undefined;
+
+    const executions = await db.getDeveloperExecutions(developerId, agentId, status);
+    res.json({ executions, count: executions.length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/developer/earnings - Verified net earnings and platform fee breakdown
+developerRouter.get('/earnings', async (req: Request, res: Response) => {
+  try {
+    const developerId = req.query.developerId ? String(req.query.developerId) : 'd0000000-0000-0000-0000-000000000001';
+    const earnings = await db.getDeveloperEarnings(developerId);
+    res.json(earnings);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/developer/request-access - User submits request to become developer
+developerRouter.post('/request-access', async (req: Request, res: Response) => {
+  try {
+    const { userId, organization, reason } = req.body;
+    if (!userId) {
+      res.status(400).json({ error: 'User ID is required' });
+      return;
+    }
+
+    await db.logAudit({
+      actor_id: userId,
+      action: 'DEVELOPER_ROLE_REQUESTED',
+      target_type: 'user_profile',
+      target_id: userId,
+      details: { organization, reason: reason || 'Requested to publish agent endpoints' },
+    });
+
+    // Auto-approve in demo mode or update profile
+    await db.updateProfileRole(userId, 'developer');
+
+    res.json({ success: true, message: 'Developer role access granted successfully' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+

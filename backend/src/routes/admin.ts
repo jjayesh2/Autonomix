@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/supabase.js';
 import { v4 as uuidv4 } from 'uuid';
+import { aiService } from '../ai/aiService.js';
 
 export const adminRouter = Router();
 
@@ -110,3 +111,109 @@ adminRouter.get('/audit-logs', async (req: Request, res: Response) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// GET /api/admin/users - List all registered user profiles
+adminRouter.get('/users', async (req: Request, res: Response) => {
+  try {
+    const profiles = await db.getAllProfiles();
+    res.json({ users: profiles, count: profiles.length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/users/:id/role - Update a user's role
+adminRouter.post('/users/:id/role', async (req: Request, res: Response) => {
+  try {
+    const { role, adminId } = req.body;
+    const userId = req.params.id;
+
+    if (!['customer', 'developer', 'admin'].includes(role)) {
+      res.status(400).json({ error: 'Invalid role specified' });
+      return;
+    }
+
+    const updated = await db.updateProfileRole(userId, role);
+    if (!updated) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    await db.logAudit({
+      actor_id: adminId || 'a0000000-0000-0000-0000-000000000000',
+      action: 'ADMIN_UPDATE_USER_ROLE',
+      target_type: 'user_profile',
+      target_id: userId,
+      details: { newRole: role },
+    });
+
+    res.json({ success: true, user: updated });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/executions - Platform-wide agent execution monitoring
+adminRouter.get('/executions', async (req: Request, res: Response) => {
+  try {
+    const status = req.query.status ? String(req.query.status) : undefined;
+    const executions = await db.getAllExecutions(status);
+    res.json({ executions, count: executions.length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/overview - Operational platform metrics
+adminRouter.get('/overview', async (req: Request, res: Response) => {
+  try {
+    const [profiles, agents, submissions, tasks, txs, executions] = await Promise.all([
+      db.getAllProfiles(),
+      db.getApprovedAgents(),
+      db.getSubmissions(),
+      db.getTasks(),
+      db.getTransactions(),
+      db.getAllExecutions(),
+    ]);
+
+    const activeTasks = tasks.filter((t) => t.status === 'in_progress').length;
+    const failedTasks = tasks.filter((t) => t.status === 'failed').length;
+    const failedTxs = txs.filter((t) => t.payment_status === 'failed').length;
+    const pendingReviews = submissions.filter((s) => s.status === 'pending').length;
+
+    res.json({
+      totalUsers: profiles.length,
+      activeAgents: agents.length,
+      pendingReviews,
+      totalTasks: tasks.length,
+      activeTasks,
+      failedTasks,
+      totalTransactions: txs.length,
+      failedTransactions: failedTxs,
+      totalExecutions: executions.length,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/ai/status - Inspect AI model configuration & usage metrics safely
+adminRouter.get('/ai/status', async (req: Request, res: Response) => {
+  try {
+    const status = aiService.getStatus();
+    res.json(status);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/ai/test - Health check & latency test for configured AI provider
+adminRouter.post('/ai/test', async (req: Request, res: Response) => {
+  try {
+    const result = await aiService.testProvider();
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+

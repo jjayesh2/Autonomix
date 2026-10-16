@@ -159,3 +159,34 @@ export interface AuditLog {
   ip_address?: string;
   created_at: string;
 }
+
+export interface FundingOrder {
+  id: string;
+  user_id: string;
+  amount: number;
+  currency: 'INR' | 'USD';
+  method: 'upi' | 'card' | 'netbanking' | 'faucet';
+  payment_details?: any;
+  status: 'pending' | 'completed' | 'failed';
+  fee: number;
+  gateway_reference?: string;
+  credited_usdc?: number;
+  created_at: string;
+}
+
+export interface DeveloperRequest {
+  id: string;
+  user_id: string;
+  user_email: string;
+  organization?: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewed_at?: string;
+  created_at: string;
+}
+
+export interface ExecutionTrace extends TaskStep {
+  task_title?: string;
+  task_description?: string;
+  developer_id?: string;
+}

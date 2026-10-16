@@ -136,6 +136,12 @@ export const api = {
     return res.json();
   },
 
+  async getTasks(userId?: string) {
+    const query = userId ? `?userId=${userId}` : '';
+    const res = await fetch(`${API_BASE}/tasks${query}`);
+    return res.json();
+  },
+
   async executeTask(id: string) {
     const res = await fetch(`${API_BASE}/tasks/${id}/execute`, {
       method: 'POST',
@@ -212,4 +218,85 @@ export const api = {
     });
     return res.json();
   },
+
+  // Developer routes
+  async getDeveloperExecutions(params: { developerId?: string; agentId?: string; status?: string } = {}) {
+    const query = new URLSearchParams();
+    if (params.developerId) query.set('developerId', params.developerId);
+    if (params.agentId) query.set('agentId', params.agentId);
+    if (params.status) query.set('status', params.status);
+    const res = await fetch(`${API_BASE}/developer/executions?${query.toString()}`);
+    return res.json();
+  },
+
+  async getDeveloperEarnings(developerId?: string) {
+    const query = developerId ? `?developerId=${developerId}` : '';
+    const res = await fetch(`${API_BASE}/developer/earnings${query}`);
+    return res.json();
+  },
+
+  async requestDeveloperAccess(payload: { userId: string; organization?: string; reason?: string }) {
+    const res = await fetch(`${API_BASE}/developer/request-access`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
+
+  // Admin routes
+  async getAdminUsers() {
+    const res = await fetch(`${API_BASE}/admin/users`);
+    return res.json();
+  },
+
+  async updateUserRole(userId: string, role: string, adminId?: string) {
+    const res = await fetch(`${API_BASE}/admin/users/${userId}/role`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, adminId }),
+    });
+    return res.json();
+  },
+
+  async getAdminExecutions(status?: string) {
+    const query = status ? `?status=${status}` : '';
+    const res = await fetch(`${API_BASE}/admin/executions${query}`);
+    return res.json();
+  },
+
+  async getAdminOverview() {
+    const res = await fetch(`${API_BASE}/admin/overview`);
+    return res.json();
+  },
+
+  async getAIStatus() {
+    const res = await fetch(`${API_BASE}/admin/ai/status`);
+    return res.json();
+  },
+
+  async testAIConnection() {
+    const res = await fetch(`${API_BASE}/admin/ai/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return res.json();
+  },
+
+  // Wallet routes
+  async getWalletSummary(userId?: string) {
+    const query = userId ? `?userId=${userId}` : '';
+    const res = await fetch(`${API_BASE}/wallet/summary${query}`);
+    return res.json();
+  },
+
+  async addFunds(payload: { userId: string; amount: number; currency: 'INR' | 'USD'; method: string; paymentDetails?: any }) {
+    const res = await fetch(`${API_BASE}/wallet/add-funds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
 };
+

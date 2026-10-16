@@ -108,6 +108,17 @@ class BudgetGuard {
 
     return Number(Math.max(0, task.budget_limit - (task.total_cost + reserved)).toFixed(4));
   }
+
+  /**
+   * Record measurable server-side model provider costs against task budget
+   */
+  async recordModelCost(taskId: string, modelCostUsd: number): Promise<void> {
+    const task = await db.getTaskById(taskId);
+    if (task && modelCostUsd > 0) {
+      const updatedTotal = Number((task.total_cost + modelCostUsd).toFixed(4));
+      await db.updateTask(task.id, { total_cost: updatedTotal });
+    }
+  }
 }
 
 export const budgetGuard = new BudgetGuard();

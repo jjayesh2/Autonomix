@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { x402Engine } from '../payments/x402Protocol.js';
-import { config } from '../config/index.js';
+import { aiService } from '../ai/aiService.js';
 
 export const INFERENCE_AGENT_CONFIG = {
   id: 'a0000000-0000-0000-0000-000000000003',
@@ -63,79 +63,44 @@ export async function handleInferenceAgentService(req: Request, res: Response): 
     return;
   }
 
-  // 4. Perform AI inference or deterministic synthesis
+  // 4. Perform AI inference using modular AI Service (Google Gemini / Reusable provider)
   const context = (req.body?.context || 'No context provided').toString();
   const taskGoal = (req.body?.task_goal || 'Summarize and extract key facts').toString();
 
-  let summary = '';
-  let keyTakeaways: string[] = [];
-  let sentiment = 'Neutral';
-  let modelUsed = 'Autonomix Deterministic Fact Engine (Rule-based)';
+  try {
+    const aiResult = await aiService.runInferenceWithAI(context, taskGoal);
 
-  // If Gemini or OpenAI API keys are configured, use live LLM
-  if (config.ai.geminiApiKey) {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${config.ai.geminiApiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: `You are an AI inference agent paid via HTTP 402. Goal: ${taskGoal}\nContext to synthesize:\n${context}\n\nRespond with strict JSON in format: {"summary": string, "key_takeaways": string[], "sentiment": "Bullish"|"Bearish"|"Neutral", "confidence_score": number}`,
-                  },
-                ],
-              },
-            ],
-          }),
-        }
-      );
-      const json: any = await response.json();
-      const rawText = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (rawText) {
-        const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(cleaned);
-        summary = parsed.summary;
-        keyTakeaways = parsed.key_takeaways;
-        sentiment = parsed.sentiment || 'Bullish';
-        modelUsed = 'Gemini 1.5 Flash (Paid Service Call)';
-      }
-    } catch (err) {
-      console.warn('[Inference Agent] Gemini call failed, falling back to deterministic synthesis:', err);
-    }
+    const serviceOutput = {
+      summary: aiResult.data.summary,
+      key_takeaways: aiResult.data.key_takeaways,
+      sentiment: aiResult.data.sentiment || 'Bullish',
+      confidence_score: aiResult.data.confidence_score ?? 0.95,
+      risk_factors: aiResult.data.risk_factors || [],
+      model_used: `${aiResult.model} (${aiResult.provider})`,
+      ai_telemetry: {
+        provider: aiResult.provider,
+        model: aiResult.model,
+        token_usage: aiResult.usage,
+        cost_usd: aiResult.costUsd,
+        latency_ms: aiResult.latencyMs,
+      },
+      synthesized_at: new Date().toISOString(),
+      paymentReceipt: {
+        protocol: 'x402 v2',
+        txHash: verification.txHash,
+        explorerUrl: verification.explorerUrl,
+        amountPaidUsdc: verification.amountPaid,
+        platformFeeUsdc: verification.platformFee,
+        settlementMode: verification.mode,
+      },
+    };
+
+    res.status(200).json(serviceOutput);
+  } catch (inferenceErr: any) {
+    console.error('[Inference Agent] Failed to generate AI inference:', inferenceErr);
+    res.status(500).json({
+      error: 'Inference Generation Error',
+      message: inferenceErr.message,
+    });
   }
-
-  // High-fidelity fallback synthesis if no API key or API call failed
-  if (!summary) {
-    summary = `Autonomix multi-agent synthesis: Successfully synthesized ${context.length} characters of ingested market and web intelligence. The analysis highlights healthy liquidity depth on Base Sepolia and strong consumer hardware catalog demand with low price dispersion.`;
-    keyTakeaways = [
-      'Base Sepolia verified liquidity shows robust on-chain settlement stability.',
-      'Pricing metrics indicate competitive market spreads across retrieved items.',
-      'Data integrity confirmed across multi-agent payment-verified trace.',
-    ];
-    sentiment = 'Bullish / High Confidence';
-    modelUsed = 'Autonomix Deterministic Fact Engine (Rule-based, No LLM Key Configured)';
-  }
-
-  const serviceOutput = {
-    summary,
-    key_takeaways: keyTakeaways,
-    sentiment,
-    confidence_score: 0.96,
-    model_used: modelUsed,
-    synthesized_at: new Date().toISOString(),
-    paymentReceipt: {
-      protocol: 'x402 v2',
-      txHash: verification.txHash,
-      explorerUrl: verification.explorerUrl,
-      amountPaidUsdc: verification.amountPaid,
-      platformFeeUsdc: verification.platformFee,
-      settlementMode: verification.mode,
-    },
-  };
-
-  res.status(200).json(serviceOutput);
 }
