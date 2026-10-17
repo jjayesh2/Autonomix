@@ -77,7 +77,7 @@ export interface TaskStep {
   action_type: string;
   input_payload?: any;
   output_payload?: any;
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'paid_output_rejected' | 'skipped';
   latency_ms: number;
   price_paid: number;
   tx_hash?: string;
@@ -109,7 +109,7 @@ export interface Transaction {
   tx_hash?: string;
   explorer_url?: string;
   payment_status: PaymentStatus;
-  service_status: 'pending' | 'success' | 'failed';
+  service_status: 'pending' | 'success' | 'failed' | 'output_rejected';
   idempotency_key: string;
   nonce?: string;
   created_at: string;

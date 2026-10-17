@@ -242,6 +242,29 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
           </span>
         </div>
 
+        {/* Animated Flowing SVG Packet Highway */}
+        <div className="hidden md:block relative w-full h-2 my-1">
+          <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 600 6">
+            <line
+              x1="20"
+              y1="3"
+              x2="580"
+              y2="3"
+              stroke="rgba(99, 102, 241, 0.25)"
+              strokeWidth="2"
+            />
+            <line
+              x1="20"
+              y1="3"
+              x2="580"
+              y2="3"
+              stroke="#06B6D4"
+              strokeWidth="2"
+              className="svg-flow-path"
+            />
+          </svg>
+        </div>
+
         {/* Pipeline Nodes Row */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3 pt-2">
           {pipelineNodes.map((node, index) => {

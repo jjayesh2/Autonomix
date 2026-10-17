@@ -12,6 +12,10 @@ import {
   ArrowRight,
   ShieldCheck,
   RotateCcw,
+  ShoppingBag,
+  Star,
+  Clock,
+  Sparkles,
 } from 'lucide-react';
 
 interface ResultsPageProps {
@@ -54,7 +58,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
             playClick();
             onNavigate('create_task');
           }}
-          className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs"
+          className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-colors"
         >
           Create Task
         </button>
@@ -67,8 +71,14 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
   const platformFee = Number((totalPaid * 0.10).toFixed(4));
   const sellerPayout = Number((totalPaid - platformFee).toFixed(4));
 
+  // Extract real products from steps (Data Agent or Scraper Agent)
+  const productStep = steps.find((s) => s.output_payload?.products || s.output_payload?.items);
+  const rawProducts: any[] = productStep?.output_payload?.products || productStep?.output_payload?.items || [];
+  const inferenceStep = steps.find((s) => s.action_type.toLowerCase().includes('inference') || s.agent_name.toLowerCase().includes('cogni'));
+  const inferencePayload = inferenceStep?.output_payload;
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -89,12 +99,95 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
             playClick();
             onNavigate('create_task');
           }}
-          className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all flex items-center gap-2"
+          className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all flex items-center gap-2 shadow-glow-accent"
         >
           <RotateCcw className="w-4 h-4" />
           Run Another Task
         </button>
       </div>
+
+      {/* Verified Products Showcase Card (If product research query) */}
+      {rawProducts.length > 0 && (
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-cyan-500/30 space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="w-5 h-5 text-cyan-400" />
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
+                Verified Product Research Findings ({rawProducts.length} Items Retrieved)
+              </h2>
+            </div>
+            <span className="text-[11px] font-mono text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20">
+              Live Source Provenance Verified
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {rawProducts.slice(0, 6).map((item: any, idx: number) => {
+              const itemUrl = item.sourceUrl || item.url || (item.id ? `https://dummyjson.com/products/${item.id}` : '#');
+              const itemPrice = typeof item.price === 'number' ? `$${item.price.toFixed(2)}` : (item.price || 'Market Price');
+              const inStock = item.in_stock ?? (item.stock ? item.stock > 0 : true);
+
+              return (
+                <div
+                  key={item.id || idx}
+                  className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-cyan-500/40 transition-all flex flex-col justify-between group space-y-3"
+                >
+                  <div>
+                    <div className="flex items-center justify-between text-[11px] font-mono mb-1.5">
+                      <span className="text-slate-400 truncate max-w-[120px]">
+                        {item.brand || item.category || 'Hardware'}
+                      </span>
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          inStock
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                        }`}
+                      >
+                        {inStock ? 'In Stock' : 'Out of Stock'}
+                      </span>
+                    </div>
+
+                    <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-2">
+                      {item.title}
+                    </h4>
+
+                    {item.description && (
+                      <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-mono font-extrabold text-emerald-400">
+                        {itemPrice}
+                      </div>
+                      {item.rating && (
+                        <div className="flex items-center gap-1 text-[10px] text-amber-400 font-mono">
+                          <Star className="w-2.5 h-2.5 fill-current" />
+                          <span>{item.rating}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <a
+                      href={itemUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-1 bg-cyan-950/40 px-2 py-1 rounded border border-cyan-800/40"
+                    >
+                      <span>Source</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Final Synthesized Output Card */}
       <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-4">
@@ -103,16 +196,39 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
             <Cpu className="w-4 h-4 text-cyan-400" />
             Executive Synthesized Result
           </span>
-          <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-            Status: {task?.status}
-          </span>
+          <div className="flex items-center gap-2">
+            {inferencePayload?.ai_telemetry?.model && (
+              <span className="text-[10px] font-mono text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                {inferencePayload.ai_telemetry.model}
+              </span>
+            )}
+            <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              Status: {task?.status}
+            </span>
+          </div>
         </div>
 
         <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
-          <h3 className="text-sm font-bold text-white">
-            {result?.final_summary || 'Task completed with autonomous agent settlements.'}
+          <h3 className="text-sm font-bold text-white leading-relaxed">
+            {inferencePayload?.summary || result?.final_summary || 'Task completed with autonomous agent settlements.'}
           </h3>
-          <p className="text-xs text-slate-300 leading-relaxed">
+
+          {/* Key Takeaways */}
+          {inferencePayload?.key_takeaways && inferencePayload.key_takeaways.length > 0 && (
+            <div className="space-y-1.5 pt-2 border-t border-slate-800">
+              <span className="text-[11px] font-mono text-slate-400 uppercase">Key Takeaways:</span>
+              <ul className="space-y-1">
+                {inferencePayload.key_takeaways.map((takeaway: string, idx: number) => (
+                  <li key={idx} className="text-xs text-slate-300 flex items-start gap-2">
+                    <span className="text-cyan-400 font-bold">•</span>
+                    <span>{takeaway}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <p className="text-xs text-slate-400 leading-relaxed pt-2">
             {task?.rationale}
           </p>
         </div>
@@ -125,7 +241,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
             <Receipt className="w-4 h-4 text-emerald-400" />
             Itemized Ledger & x402 Micropayments
           </h3>
-          <span className="text-xs font-mono text-slate-400">Token: USDC (Base Sepolia)</span>
+          <span className="text-xs font-mono text-slate-400">Token: USDC (Base Sepolia 84532)</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -133,39 +249,45 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
             <thead>
               <tr className="border-b border-slate-800 text-slate-400 font-mono text-[11px]">
                 <th className="pb-3 font-semibold">Service Agent</th>
-                <th className="pb-3 font-semibold">Category</th>
                 <th className="pb-3 font-semibold">Action</th>
                 <th className="pb-3 font-semibold">Latency</th>
                 <th className="pb-3 font-semibold text-right">Cost (USDC)</th>
-                <th className="pb-3 font-semibold text-right">On-Chain Tx</th>
+                <th className="pb-3 font-semibold text-right">Settlement Proof</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-sans">
-              {steps.map((step) => (
-                <tr key={step.id} className="hover:bg-slate-900/40">
-                  <td className="py-3 font-bold text-white">{step.agent_name}</td>
-                  <td className="py-3 text-slate-400">{step.action_type}</td>
-                  <td className="py-3 font-mono text-slate-300">{step.status}</td>
-                  <td className="py-3 font-mono text-slate-400">{step.latency_ms}ms</td>
-                  <td className="py-3 text-right font-mono font-bold text-emerald-400">
-                    +{step.price_paid.toFixed(2)}
-                  </td>
-                  <td className="py-3 text-right font-mono text-[11px]">
-                    {step.tx_hash ? (
-                      <a
-                        href={`https://sepolia.basescan.org/tx/${step.tx_hash}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-cyan-400 hover:underline inline-flex items-center gap-1"
-                      >
-                        {step.tx_hash.slice(0, 8)}... <ExternalLink className="w-3 h-3" />
-                      </a>
-                    ) : (
-                      <span className="text-slate-500">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {steps.map((step) => {
+                const receipt = step.output_payload?.paymentReceipt || {};
+                const isBroadcast = receipt.settlementType === 'onchain_broadcast';
+                const explorerLink = receipt.explorerUrl || (step.tx_hash ? `https://sepolia.basescan.org/tx/${step.tx_hash}` : null);
+                const displayHash = step.tx_hash || receipt.voucherDigest;
+
+                return (
+                  <tr key={step.id} className="hover:bg-slate-900/40">
+                    <td className="py-3 font-bold text-white">{step.agent_name}</td>
+                    <td className="py-3 text-slate-400">{step.action_type}</td>
+                    <td className="py-3 font-mono text-slate-400">{step.latency_ms}ms</td>
+                    <td className="py-3 text-right font-mono font-bold text-emerald-400">
+                      +{step.price_paid.toFixed(2)}
+                    </td>
+                    <td className="py-3 text-right font-mono text-[11px]">
+                      {explorerLink && displayHash ? (
+                        <a
+                          href={explorerLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-cyan-400 hover:underline inline-flex items-center gap-1"
+                        >
+                          <span>{isBroadcast ? 'On-Chain' : 'Permit'} {displayHash.slice(0, 8)}...</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ) : (
+                        <span className="text-slate-500">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

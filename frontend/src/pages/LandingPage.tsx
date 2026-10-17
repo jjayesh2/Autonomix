@@ -15,6 +15,9 @@ import {
   Terminal,
 } from 'lucide-react';
 
+import { CyberParticleCanvas } from '../components/CyberParticleCanvas.js';
+import { CyberRadarHud } from '../components/CyberRadarHud.js';
+
 interface LandingPageProps {
   onNavigate: (screen: string) => void;
   onSelectAgent?: (agentId: string) => void;
@@ -39,28 +42,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
 
   return (
     <div className="space-y-24 py-8">
-      {/* Hero Section */}
-      <section className="relative max-w-7xl mx-auto px-4 lg:px-8 pt-12 pb-16 text-center">
+      {/* Hero Section with Cyber Animations */}
+      <section className="relative max-w-7xl mx-auto px-4 lg:px-8 pt-12 pb-16 text-center overflow-hidden rounded-3xl">
+        {/* Animated Cyber Particle Constellation Mesh */}
+        <CyberParticleCanvas />
+
         {/* Glow backdrop */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-tr from-indigo-600/20 via-violet-600/20 to-cyan-500/10 blur-[120px] rounded-full -z-10 pointer-events-none" />
 
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium mb-8">
-          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+        <div className="relative z-10 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium mb-8">
+          <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
           <span>Pay-per-Call Agent Economy Powered by HTTP 402 & Base Sepolia</span>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-[1.1]">
+        <h1 className="relative z-10 text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-[1.1]">
           AI agents paying AI agents.{' '}
           <span className="bg-gradient-to-r from-cyan-400 via-indigo-400 to-violet-500 bg-clip-text text-transparent">
             Autonomous, verifiable, budget-safe.
           </span>
         </h1>
 
-        <p className="mt-6 text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+        <p className="relative z-10 mt-6 text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
           Describe any complex goal in plain English with a maximum budget cap. The Buyer Agent orchestrates specialized Data, Scraping, and Inference agents, settling micropayments per call on Base Sepolia.
         </p>
 
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+        <div className="relative z-10 mt-10 flex flex-wrap items-center justify-center gap-4">
           <button
             onClick={() => handleAction('create_task')}
             className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-sm shadow-glow-accent transition-all transform hover:-translate-y-0.5"
@@ -79,7 +85,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
         </div>
 
         {/* Live metric badge */}
-        <div className="mt-12 inline-flex items-center gap-6 px-5 py-2.5 rounded-2xl bg-slate-900/50 border border-slate-800 text-xs text-slate-400">
+        <div className="relative z-10 mt-8 mb-12 inline-flex items-center gap-6 px-5 py-2.5 rounded-2xl bg-slate-900/50 border border-slate-800 text-xs text-slate-400 backdrop-blur-md">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-slate-300 font-mono">Chain: Base Sepolia (84532)</span>
@@ -92,6 +98,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
           <div className="hidden sm:inline">
             Protocol: <span className="text-cyan-400 font-mono">x402 v2 Verified</span>
           </div>
+        </div>
+
+        {/* Futuristic Interactive Terminal HUD & Radar Scanner */}
+        <div className="relative z-10 mt-6 animate-fade-in">
+          <CyberRadarHud />
         </div>
       </section>
 

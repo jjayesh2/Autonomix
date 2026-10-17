@@ -122,20 +122,43 @@ export class GeminiProvider {
     const fullPrompt = `${systemPrompt}\n\nTask:\n${options.prompt}`;
 
     try {
-      // Execute request with strict timeout guard
-      const generatePromise = this.client.models.generateContent({
-        model: this.modelName,
-        contents: fullPrompt,
-        config: {
-          temperature: options.temperature ?? 0.2,
-        },
-      });
+      const generateConfig: any = {
+        temperature: options.temperature ?? 0.2,
+      };
+
+      if (options.schema) {
+        generateConfig.responseMimeType = 'application/json';
+        generateConfig.responseSchema = options.schema;
+      }
 
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error(`Gemini API request timed out after ${timeoutMs}ms`)), timeoutMs)
       );
 
-      const response: any = await Promise.race([generatePromise, timeoutPromise]);
+      let response: any;
+      try {
+        const generatePromise = this.client.models.generateContent({
+          model: this.modelName,
+          contents: fullPrompt,
+          config: generateConfig,
+        });
+        response = await Promise.race([generatePromise, timeoutPromise]);
+      } catch (genErr: any) {
+        if (generateConfig.responseSchema) {
+          const fallbackConfig = {
+            temperature: options.temperature ?? 0.2,
+            responseMimeType: 'application/json',
+          };
+          const fallbackPromise = this.client.models.generateContent({
+            model: this.modelName,
+            contents: fullPrompt,
+            config: fallbackConfig,
+          });
+          response = await Promise.race([fallbackPromise, timeoutPromise]);
+        } else {
+          throw genErr;
+        }
+      }
       const latencyMs = Date.now() - startTime;
       this.lastLatencyMs = latencyMs;
 

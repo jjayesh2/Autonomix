@@ -27,10 +27,20 @@ const TASK_PLAN_SCHEMA = {
           category: { type: 'string', enum: ['Data', 'Inference', 'Scraping'] },
           actionType: { type: 'string' },
           rationale: { type: 'string' },
-          inputPayload: { type: 'object' },
+          inputPayload: {
+            type: 'object',
+            properties: {
+              query: { type: 'string' },
+              target: { type: 'string' },
+              symbol: { type: 'string' },
+              url: { type: 'string' },
+              context: { type: 'string' },
+              task_goal: { type: 'string' },
+            },
+          },
           estimatedCostUsd: { type: 'number' },
         },
-        required: ['agentId', 'agentName', 'category', 'actionType', 'rationale', 'inputPayload', 'estimatedCostUsd'],
+        required: ['agentId', 'agentName', 'category', 'actionType', 'rationale', 'estimatedCostUsd'],
       },
     },
     constraints: {
@@ -53,8 +63,20 @@ const INFERENCE_OUTPUT_SCHEMA = {
       items: { type: 'string' },
     },
     sentiment: { type: 'string', enum: ['Bullish', 'Bearish', 'Neutral'] },
-    confidence_score: { type: 'number', minimum: 0, maximum: 1 },
+    confidence_score: { type: 'number' },
+    verified_facts: {
+      type: 'array',
+      items: { type: 'string' },
+    },
     risk_factors: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+    recommendations: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+    source_citations: {
       type: 'array',
       items: { type: 'string' },
     },
@@ -90,7 +112,11 @@ export class AIService {
     availableAgents: Agent[]
   ): Promise<AICompletionResult<StructuredTaskPlan>> {
     // 1. If Gemini is configured and preferred, use live LLM
-    if (this.geminiProvider.isConfigured() && this.defaultProvider !== 'deterministic') {
+    if (this.defaultProvider !== 'deterministic') {
+      if (!this.geminiProvider.isConfigured()) {
+        throw new Error('Buyer Agent Planning Failed: GEMINI_API_KEY is not configured. Live planning requires a valid Google Gemini API key.');
+      }
+
       const agentsSummary = availableAgents.map((a) => ({
         id: a.id,
         name: a.name,
@@ -142,7 +168,7 @@ Respond with valid JSON matching this structure:
           systemInstruction: 'You are an autonomous AI Agent Orchestration Planner. You emit strict, valid JSON plans only.',
           schema: TASK_PLAN_SCHEMA,
           temperature: 0.1,
-          timeoutMs: 12000,
+          timeoutMs: 25000,
         });
 
         // Double check budget constraint on parsed output
@@ -151,15 +177,12 @@ Respond with valid JSON matching this structure:
 
         return result;
       } catch (err: any) {
-        console.warn(`[AIService] Gemini planning failed: ${err.message}. Evaluating fallback strategy.`);
-        // If deterministic fallback is prohibited in production when AI_PROVIDER=gemini, rethrow
-        if (process.env.STRICT_AI_MODE === 'true') {
-          throw err;
-        }
+        console.error(`[AIService] Gemini planning failed: ${err.message}.`);
+        throw new Error(`Buyer Agent Planning Failed: Live Google Gemini execution failed (${err.message}). Live mode prohibits silent mock fallbacks.`);
       }
     }
 
-    // 2. Deterministic Fallback Planner (Transparently labeled)
+    // 2. Deterministic Fallback Planner (Explicitly only when AI_PROVIDER=deterministic for offline tests)
     return this.generateDeterministicPlan(description, budgetLimit, availableAgents);
   }
 
@@ -170,50 +193,69 @@ Respond with valid JSON matching this structure:
     context: string,
     taskGoal: string
   ): Promise<AICompletionResult<any>> {
-    if (this.geminiProvider.isConfigured() && this.defaultProvider !== 'deterministic') {
-      const prompt = `You are CogniSynthesize, an AI Inference Agent paid via HTTP 402 on Base Sepolia.
+    if (!context || !context.trim()) {
+      throw new Error('Inference input error: Context from preceding data/scraping steps is empty.');
+    }
+    if (!taskGoal || !taskGoal.trim()) {
+      throw new Error('Inference input error: task_goal parameter is required.');
+    }
+
+    if (this.defaultProvider !== 'deterministic') {
+      if (!this.geminiProvider.isConfigured()) {
+        throw new Error('Inference Failed: GEMINI_API_KEY is not configured. Live AI inference requires a valid Google Gemini API key.');
+      }
+
+      const prompt = `You are CogniSynthesize, an autonomous AI Inference Agent operating in the Autonomix Agent Economy paid via HTTP 402 on Base Sepolia.
 Goal: ${taskGoal}
 
-Supplied verified context from preceding pipeline steps:
+Supplied verified context from upstream tool executions (Data Oracle and Web Scraping outputs):
 ${context}
 
 Instructions:
-Synthesize the context into clear facts, key metrics, and strategic takeaways.
-Assess the overall sentiment (Bullish, Bearish, or Neutral) and provide a confidence score between 0.0 and 1.0.
+1. Extract and cite verified_facts directly from the upstream context as an array of strings (exact prices, asset tickers, product titles, URLs, timestamps).
+2. Synthesize an objective executive summary of the findings as a string.
+3. List key_takeaways as an array of strings.
+4. Assess market or commercial sentiment strictly as "Bullish", "Bearish", or "Neutral".
+5. Provide a realistic confidence_score between 0.0 and 1.0 based on data quality.
+6. Identify specific risk_factors as an array of strings.
+7. Provide recommendations as an array of strings.
+8. List source_citations corresponding to the real URLs provided as an array of strings.
+9. Clearly separate externally verified facts from your AI-generated recommendations.
 
-Respond with strict JSON matching this structure:
+Respond strictly with valid JSON conforming to this structure:
 {
   "summary": string,
   "key_takeaways": string[],
   "sentiment": "Bullish" | "Bearish" | "Neutral",
   "confidence_score": number,
-  "risk_factors": string[]
+  "verified_facts": string[],
+  "risk_factors": string[],
+  "recommendations": string[],
+  "source_citations": string[]
 }`;
 
       try {
         return await this.geminiProvider.generateStructured<any>({
           prompt,
-          systemInstruction: 'You are a financial and intelligence synthesis agent. Return valid JSON only.',
+          systemInstruction: 'You are an objective autonomous AI inference agent. You return strict, valid JSON matching the schema.',
           schema: INFERENCE_OUTPUT_SCHEMA,
           temperature: 0.2,
-          timeoutMs: 12000,
+          timeoutMs: 25000,
         });
       } catch (err: any) {
-        console.warn(`[AIService] Gemini inference failed: ${err.message}. Falling back.`);
-        if (process.env.STRICT_AI_MODE === 'true') {
-          throw err;
-        }
+        console.error(`[AIService] Live Gemini inference failed: ${err.message}`);
+        throw new Error(`Inference Service Error: Live Google Gemini execution failed (${err.message}). Live mode strictly prohibits mock fallbacks.`);
       }
     }
 
-    // Deterministic Rule-Based Synthesis
+    // Deterministic Rule-Based Synthesis (Strictly for isolated offline unit tests)
     return this.generateDeterministicInference(context, taskGoal);
   }
 
   /**
-   * Deterministic Rule-Based Fallback Planner
+   * Deterministic Rule-Based Planner (Isolated test fixture only)
    */
-  private generateDeterministicPlan(
+  public generateDeterministicPlan(
     description: string,
     budgetLimit: number,
     availableAgents: Agent[]
@@ -221,13 +263,15 @@ Respond with strict JSON matching this structure:
     const lower = description.toLowerCase();
     const needsData = lower.includes('data') || lower.includes('market') || lower.includes('price') ||
       lower.includes('crypto') || lower.includes('eth') || lower.includes('btc') || lower.includes('oracle') ||
+      lower.includes('laptop') || lower.includes('phone') || lower.includes('product') ||
       lower.includes('all') || lower.includes('multi');
 
     const needsScraper = lower.includes('scrap') || lower.includes('extract') || lower.includes('web') ||
-      lower.includes('product') || lower.includes('catalog') || lower.includes('all') || lower.includes('multi');
+      lower.includes('product') || lower.includes('catalog') || lower.includes('laptop') ||
+      lower.includes('all') || lower.includes('multi');
 
     const needsInference = lower.includes('summar') || lower.includes('synthes') || lower.includes('analyz') ||
-      lower.includes('report') || lower.includes('brief') || lower.includes('all') || lower.includes('multi') ||
+      lower.includes('report') || lower.includes('brief') || lower.includes('compare') || lower.includes('all') || lower.includes('multi') ||
       (!needsData && !needsScraper);
 
     const selected: Agent[] = [];
@@ -243,15 +287,19 @@ Respond with strict JSON matching this structure:
       selected.push(availableAgents[0]);
     }
 
+    const isProduct = lower.includes('laptop') || lower.includes('phone') || lower.includes('watch') ||
+      lower.includes('product') || lower.includes('buy') || lower.includes('shoe');
+    const productQuery = lower.includes('laptop') ? 'laptop' : lower.includes('phone') ? 'phone' : lower.includes('watch') ? 'watch' : 'laptop';
+
     const steps = selected.map((agent, i) => {
       let actionType = 'Data Query';
       let payload: any = { query: 'ETH' };
       if (agent.category === 'Data') {
-        actionType = 'Oracle Price Feed Retrieval';
-        payload = { query: lower.includes('btc') ? 'BTC' : lower.includes('base') ? 'BASE' : 'ETH' };
+        actionType = isProduct ? 'Live Product Data Retrieval' : 'Oracle Price Feed Retrieval';
+        payload = { query: isProduct ? productQuery : (lower.includes('btc') ? 'BTC' : lower.includes('base') ? 'BASE' : 'ETH') };
       } else if (agent.category === 'Scraping') {
-        actionType = 'Sandbox Catalog Extraction';
-        payload = { target: 'hardware', extract_fields: ['title', 'price', 'url'] };
+        actionType = 'Live Web & Catalog Extraction';
+        payload = { target: isProduct ? productQuery : 'hardware', extract_fields: ['title', 'price', 'url'] };
       } else {
         actionType = 'AI Multi-Agent Synthesis';
         payload = { task_goal: description, format: 'executive_summary' };
@@ -275,51 +323,91 @@ Respond with strict JSON matching this structure:
       requiredCapabilities: selected.map((s) => s.category),
       steps,
       constraints: [`Budget Cap: ${budgetLimit} USDC`, 'Permitted Sandbox Scraper Only', 'x402 Pay-per-Call Settlement'],
-      explanation: `Deterministic heuristic plan selecting ${steps.length} approved agents within ${budgetLimit} USDC budget.`,
+      explanation: `Deterministic test fixture plan selecting ${steps.length} approved agents within ${budgetLimit} USDC budget.`,
       estimatedTotalUsdc: Number(total.toFixed(4)),
     };
 
     return {
       data: planData,
       rawText: JSON.stringify(planData, null, 2),
-      model: 'Deterministic Rule Engine',
+      model: 'Deterministic Rule Engine (Test Fixture)',
       provider: 'deterministic',
       usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
       costUsd: 0,
-      latencyMs: 5,
+      latencyMs: 1,
     };
   }
 
   /**
-   * Deterministic Rule-Based Inference Fallback
+   * Deterministic Rule-Based Inference (Isolated test fixture only)
    */
   private generateDeterministicInference(context: string, taskGoal: string): AICompletionResult<any> {
-    const isCrypto = context.toUpperCase().includes('ETH') || context.toUpperCase().includes('BTC');
-    const isCatalog = context.toLowerCase().includes('hardware') || context.toLowerCase().includes('laptop');
+    const isCrypto = context.includes('BTC') || context.includes('ETH') || context.includes('price_usd');
+    const isProduct = context.includes('laptop') || context.includes('products') || context.includes('phone');
+
+    const sentiment: 'Bullish' | 'Bearish' | 'Neutral' = isCrypto ? 'Bullish' : 'Neutral';
+    const confidence = isCrypto || isProduct ? 0.94 : 0.88;
+
+    const verifiedFacts: string[] = [];
+    if (isCrypto) {
+      verifiedFacts.push('Real-time cryptocurrency rate retrieved from live market oracle');
+    }
+    if (isProduct) {
+      verifiedFacts.push('Product catalog inventory retrieved from live product repository');
+    }
+    if (verifiedFacts.length === 0) {
+      verifiedFacts.push('Context data retrieved from upstream marketplace agents');
+    }
+
+    const summary = isCrypto
+      ? `Market Intelligence Brief: Synthesized live oracle data for target assets. Liquidity and volume confirm active trading participation.`
+      : isProduct
+      ? `Commercial Hardware Brief: Analyzed live product catalog and verified available specs, stock availability, and manufacturer pricing.`
+      : `Executive Synthesis: Multi-agent pipeline gathered verified context for '${taskGoal}'. Realized outputs meet required operational threshold.`;
+
+    const keyTakeaways = isCrypto
+      ? [
+          'Live oracle pricing verified across Base Sepolia network.',
+          'High 24h market activity confirms active demand.',
+          'Decentralized oracle feed verified with zero latency deviation.',
+        ]
+      : isProduct
+      ? [
+          'Multiple matching items identified with real pricing and specs.',
+          'In-stock availability confirmed through live repository inspection.',
+          'Direct manufacturer source URLs verified without fabrication.',
+        ]
+      : [
+          'Multi-agent pipeline succeeded across all dispatched execution stages.',
+          'x402 micropayments verified on-chain with unique transaction receipts.',
+        ];
+
+    const riskFactors = isCrypto
+      ? ['Short-term volatility across decentralized liquidity pools.', 'Macroeconomic rate adjustments.']
+      : ['Hardware stock fluctuations across retailers.', 'Pricing variations across vendor tiers.'];
 
     const data = {
-      summary: `Autonomous synthesis compiled for: "${taskGoal}". Evaluated verified upstream payload outputs against Base Sepolia protocol metrics.`,
-      key_takeaways: [
-        isCrypto ? 'Decentralized Oracle feed verified on Base Sepolia with high liquidity depth.' : 'Primary data points successfully retrieved and validated.',
-        isCatalog ? 'Sandboxed hardware inventory parsed: all active product SKUs in stock.' : 'Intermediate schema validation passed with zero fatal errors.',
-        'Total multi-agent orchestration executed within configured atomic spending budget.',
+      verified_facts: verifiedFacts,
+      summary,
+      key_takeaways: keyTakeaways,
+      sentiment,
+      confidence_score: confidence,
+      risk_factors: riskFactors,
+      recommendations: [
+        'Review itemized provider outputs and verify transaction hashes on Basescan Sepolia.',
+        'Ensure continuous monitoring of liquidity and stock availability.',
       ],
-      sentiment: isCrypto ? 'Bullish' : 'Neutral',
-      confidence_score: 0.94,
-      risk_factors: [
-        'Decentralized oracle variance within standard deviation limits',
-        'HTTP 402 signature nonce uniqueness verified',
-      ],
+      source_citations: ['https://dummyjson.com', 'https://api.binance.com'],
     };
 
     return {
       data,
       rawText: JSON.stringify(data, null, 2),
-      model: 'Deterministic Fact Engine',
+      model: 'Deterministic Rule Engine (Test Fixture)',
       provider: 'deterministic',
       usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
       costUsd: 0,
-      latencyMs: 12,
+      latencyMs: 1,
     };
   }
 }

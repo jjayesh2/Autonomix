@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { ethers } from 'ethers';
 import { config } from '../config/index.js';
 import {
   Agent,
@@ -225,6 +226,7 @@ const inMemorySteps: Map<string, TaskStep[]> = new Map();
 const inMemoryResults: Map<string, TaskResult> = new Map();
 const inMemoryTransactions: Map<string, Transaction[]> = new Map();
 const inMemoryAuditLogs: AuditLog[] = [];
+const inMemoryUsedNonces: Set<string> = new Set();
 
 export const db = {
   isConfigured: () => Boolean(supabaseClient),
@@ -627,6 +629,113 @@ export const db = {
       created_at: new Date().toISOString(),
     });
     return order;
+  },
+
+  async isNonceUsed(nonce: string): Promise<boolean> {
+    if (inMemoryUsedNonces.has(nonce)) return true;
+    for (const txList of inMemoryTransactions.values()) {
+      if (txList.some((t) => t.nonce === nonce || t.idempotency_key === nonce)) {
+        inMemoryUsedNonces.add(nonce);
+        return true;
+      }
+    }
+    if (supabaseClient) {
+      const { data } = await supabaseClient
+        .from('transactions')
+        .select('id')
+        .or(`nonce.eq.${nonce},idempotency_key.eq.${nonce}`)
+        .limit(1);
+      if (data && data.length > 0) {
+        inMemoryUsedNonces.add(nonce);
+        return true;
+      }
+    }
+    return false;
+  },
+
+  async recordNonce(nonce: string): Promise<void> {
+    inMemoryUsedNonces.add(nonce);
+  },
+
+  async updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction | null> {
+    if (supabaseClient) {
+      const { data, error } = await supabaseClient.from('transactions').update(updates).eq('id', id).select().single();
+      if (!error && data) return data as Transaction;
+    }
+    for (const txList of inMemoryTransactions.values()) {
+      const index = txList.findIndex((t) => t.id === id);
+      if (index !== -1) {
+        txList[index] = { ...txList[index], ...updates, updated_at: new Date().toISOString() };
+        return txList[index];
+      }
+    }
+    return null;
+  },
+
+  async reconcileTransactionWithRpc(txId: string): Promise<{ reconciled: boolean; status: string; txHash?: string; error?: string }> {
+    let targetTx: Transaction | null = null;
+    for (const txList of inMemoryTransactions.values()) {
+      const found = txList.find((t) => t.id === txId || t.tx_hash === txId);
+      if (found) {
+        targetTx = found;
+        break;
+      }
+    }
+
+    if (!targetTx && supabaseClient) {
+      const { data } = await supabaseClient.from('transactions').select('*').or(`id.eq.${txId},tx_hash.eq.${txId}`).limit(1).single();
+      if (data) targetTx = data as Transaction;
+    }
+
+    if (!targetTx) {
+      return { reconciled: false, status: 'not_found', error: 'Transaction record not found in ledger' };
+    }
+
+    const txHash = targetTx.tx_hash;
+    if (!txHash || !txHash.startsWith('0x') || txHash.length !== 66) {
+      // Off-chain permit voucher or missing on-chain hash
+      return {
+        reconciled: false,
+        status: 'unverified_hash',
+        txHash,
+        error: 'Transaction hash is an off-chain cryptographic digest or unbroadcast permit voucher',
+      };
+    }
+
+    try {
+      const provider = new ethers.JsonRpcProvider(config.web3.rpcUrl);
+      const receipt = await provider.getTransactionReceipt(txHash);
+
+      if (!receipt) {
+        await this.updateTransaction(targetTx.id, { payment_status: 'reconciliation_required' });
+        return {
+          reconciled: false,
+          status: 'pending_confirmation',
+          txHash,
+          error: 'Transaction is not yet mined or not found on Base Sepolia',
+        };
+      }
+
+      const isSuccess = receipt.status === 1;
+      const finalStatus = isSuccess ? 'confirmed' : 'failed';
+      await this.updateTransaction(targetTx.id, {
+        payment_status: finalStatus as any,
+        updated_at: new Date().toISOString(),
+      });
+
+      return {
+        reconciled: true,
+        status: finalStatus,
+        txHash,
+      };
+    } catch (err: any) {
+      return {
+        reconciled: false,
+        status: 'rpc_error',
+        txHash,
+        error: `Base Sepolia RPC query failed: ${err.message}`,
+      };
+    }
   },
 };
 
