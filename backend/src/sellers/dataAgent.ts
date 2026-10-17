@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import axios from 'axios';
 import { x402Engine } from '../payments/x402Protocol.js';
 
 export const DATA_AGENT_CONFIG = {
@@ -8,31 +9,36 @@ export const DATA_AGENT_CONFIG = {
   recipient: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
 };
 
-// Real-time market oracle quotes for financial & crypto feeds
-const MARKET_FEEDS: Record<string, { price: number; change24h: number; volume24h: number; source: string }> = {
-  ETH: { price: 3480.50, change24h: 3.42, volume24h: 18_450_000_000, source: 'Base Sepolia Decentralized Oracle Feed' },
-  BTC: { price: 91_250.00, change24h: 1.85, volume24h: 42_100_000_000, source: 'Consensus Institutional Aggregate' },
-  BASE: { price: 28.40, change24h: 6.15, volume24h: 980_000_000, source: 'Base Network Liquidity Index' },
-  SOL: { price: 194.20, change24h: -0.80, volume24h: 4_200_000_000, source: 'Global Exchange TWAP' },
-  USDC: { price: 1.00, change24h: 0.01, volume24h: 6_800_000_000, source: 'Circle Reserve Attestation' },
-  INFLATION: { price: 2.4, change24h: -0.1, volume24h: 0, source: 'Bureau of Economic Metrics CPI Index' },
-};
+// Known cryptocurrency tickers to route to real Binance market oracle
+const CRYPTO_TICKERS = new Set(['ETH', 'BTC', 'SOL', 'BNB', 'AVAX', 'MATIC', 'DOGE', 'USDC']);
+
+function safeSetHeaders(res: Response, headers: Record<string, string>) {
+  if (typeof res.set === 'function') {
+    res.set(headers);
+  } else if (typeof (res as any).setHeader === 'function') {
+    for (const [k, v] of Object.entries(headers)) {
+      (res as any).setHeader(k, v);
+    }
+  }
+}
 
 export async function handleDataAgentService(req: Request, res: Response): Promise<void> {
-  const paymentHeader = req.headers['authorization'] || req.headers['x-payment'] || req.body?.paymentAuth;
+  const paymentHeader =
+    req.headers['payment-signature'] ||
+    req.headers['x-payment'] ||
+    req.headers['authorization'] ||
+    req.body?.paymentAuth;
 
   // 1. If unpaid, challenge with HTTP 402
   if (!paymentHeader) {
     const challenge = x402Engine.createChallenge(
       DATA_AGENT_CONFIG.recipient,
       DATA_AGENT_CONFIG.priceUsdc,
-      DATA_AGENT_CONFIG.name
+      DATA_AGENT_CONFIG.name,
+      '/api/agents/data'
     );
 
-    res.set({
-      'WWW-Authenticate': 'x402',
-      'X-Payment-Required': JSON.stringify(challenge),
-    });
+    safeSetHeaders(res, x402Engine.createPaymentRequiredHeaders(challenge));
 
     res.status(402).json({
       status: 402,
@@ -46,11 +52,17 @@ export async function handleDataAgentService(req: Request, res: Response): Promi
   // 2. Parse payment authorization
   let authPayload: any;
   try {
-    authPayload = typeof paymentHeader === 'string' && paymentHeader.startsWith('{')
-      ? JSON.parse(paymentHeader)
-      : typeof paymentHeader === 'object'
-      ? paymentHeader
-      : JSON.parse(Buffer.from(paymentHeader.replace('Bearer ', ''), 'base64').toString('utf8'));
+    const rawVal = Array.isArray(paymentHeader) ? paymentHeader[0] : paymentHeader;
+    if (typeof rawVal === 'object') {
+      authPayload = rawVal;
+    } else {
+      const cleanStr = rawVal.replace(/^Bearer\s+/i, '').trim();
+      if (cleanStr.startsWith('{')) {
+        authPayload = JSON.parse(cleanStr);
+      } else {
+        authPayload = JSON.parse(Buffer.from(cleanStr, 'base64').toString('utf8'));
+      }
+    }
   } catch (err) {
     res.status(400).json({ error: 'Malformed payment authorization payload' });
     return;
@@ -72,31 +84,162 @@ export async function handleDataAgentService(req: Request, res: Response): Promi
     return;
   }
 
-  // 4. Fulfill paid data service
-  const query = (req.body?.query || req.query?.query || 'ETH').toString().toUpperCase();
-  const feed = MARKET_FEEDS[query] || {
-    price: 154.20,
-    change24h: 2.1,
-    volume24h: 1_200_000,
-    source: 'Autonomix Global Multi-Asset Oracle',
-  };
+  // 4. Fulfill paid data service using live APIs
+  const rawQuery = (req.body?.query || req.query?.query || 'laptop').toString().trim();
+  const upperQuery = rawQuery.toUpperCase();
+  const timestamp = new Date().toISOString();
 
-  const serviceOutput = {
-    asset: query,
-    price_usd: feed.price,
-    change_24h_pct: feed.change24h,
-    volume_24h_usd: feed.volume24h,
-    timestamp: new Date().toISOString(),
-    source: feed.source,
-    paymentReceipt: {
-      protocol: 'x402 v2',
-      txHash: verification.txHash,
-      explorerUrl: verification.explorerUrl,
-      amountPaidUsdc: verification.amountPaid,
-      platformFeeUsdc: verification.platformFee,
-      settlementMode: verification.mode,
-    },
-  };
+  // Route A: Financial / Crypto Market Oracle via Binance Public API
+  if (CRYPTO_TICKERS.has(upperQuery)) {
+    const symbol = upperQuery === 'USDC' ? 'USDCUSDT' : `${upperQuery}USDT`;
+    const sourceUrl = `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`;
+    try {
+      const response = await axios.get(sourceUrl, {
+        timeout: 7000,
+        headers: { 'User-Agent': 'Autonomix-Market-Oracle/1.0' },
+      });
 
-  res.status(200).json(serviceOutput);
+      const ticker = response.data;
+      const price = parseFloat(ticker.lastPrice);
+      const change24h = parseFloat(ticker.priceChangePercent) || 0.0;
+      const volume24h = parseFloat(ticker.quoteVolume) || 0.0;
+
+      if (isNaN(price)) {
+        throw new Error(`Binance returned invalid price data for ${upperQuery}`);
+      }
+
+      const serviceOutput = {
+        asset: upperQuery,
+        price_usd: price,
+        change_24h_pct: change24h,
+        volume_24h_usd: volume24h,
+        high_24h_usd: parseFloat(ticker.highPrice) || price,
+        low_24h_usd: parseFloat(ticker.lowPrice) || price,
+        timestamp,
+        source: 'Binance Global Market Feed',
+        sourceUrl,
+        retrievalTimestamp: timestamp,
+        paymentReceipt: {
+          protocol: 'x402 v2',
+          txHash: verification.txHash,
+          voucherDigest: verification.voucherDigest,
+          explorerUrl: verification.explorerUrl,
+          amountPaidUsdc: verification.amountPaid,
+          platformFeeUsdc: verification.platformFee,
+          settlementType: verification.settlementType,
+          settlementMode: verification.mode,
+        },
+      };
+
+      safeSetHeaders(res, x402Engine.createPaymentResponseHeader(verification));
+      res.status(200).json(serviceOutput);
+      return;
+    } catch (binanceErr: any) {
+      console.error(`[DataAgent] Live Binance fetch failed for ${upperQuery}:`, binanceErr.message);
+      // Explicit error reporting — zero hardcoded fake prices in live mode
+      res.status(502).json({
+        error: 'Crypto Market Oracle Retrieval Failed',
+        message: `Failed to query live market data for ${upperQuery} from Binance: ${binanceErr.message}`,
+        source: 'Binance Global Market Feed',
+        sourceUrl,
+        retrievalTimestamp: timestamp,
+        asset: upperQuery,
+      });
+      return;
+    }
+  }
+
+  // Route B: Real Product Research via DummyJSON Public Product API
+  const searchUrl = `https://dummyjson.com/products/search?q=${encodeURIComponent(rawQuery)}`;
+  try {
+    const response = await axios.get(searchUrl, {
+      timeout: 7000,
+      headers: { 'User-Agent': 'Autonomix-Product-Oracle/1.0' },
+    });
+    const productData = response.data;
+
+    const items = (productData.products || []).map((p: any) => ({
+      id: p.id,
+      title: p.title,
+      price: p.price,
+      currency: 'USD',
+      brand: p.brand || 'Unbranded',
+      category: p.category,
+      rating: p.rating,
+      stock: p.stock,
+      in_stock: p.stock > 0,
+      description: p.description,
+      sourceUrl: `https://dummyjson.com/products/${p.id}`,
+      retrievalTimestamp: timestamp,
+    }));
+
+    if (items.length === 0) {
+      // Genuine empty result handling — never fabricate random products or a fake price
+      const emptyOutput = {
+        asset: rawQuery,
+        price_usd: 0,
+        change_24h_pct: 0,
+        volume_24h_usd: 0,
+        timestamp,
+        source: 'DummyJSON Open Product API',
+        sourceUrl: searchUrl,
+        retrievalTimestamp: timestamp,
+        total_found: 0,
+        products: [],
+        status: 'no_records_found',
+        message: `No live product records found matching query "${rawQuery}" in the catalog.`,
+        paymentReceipt: {
+          protocol: 'x402 v2',
+          txHash: verification.txHash,
+          voucherDigest: verification.voucherDigest,
+          explorerUrl: verification.explorerUrl,
+          amountPaidUsdc: verification.amountPaid,
+          platformFeeUsdc: verification.platformFee,
+          settlementType: verification.settlementType,
+          settlementMode: verification.mode,
+        },
+      };
+
+      safeSetHeaders(res, x402Engine.createPaymentResponseHeader(verification));
+      res.status(200).json(emptyOutput);
+      return;
+    }
+
+    const primaryProduct = items[0];
+
+    const serviceOutput = {
+      asset: rawQuery,
+      price_usd: primaryProduct.price,
+      change_24h_pct: 0,
+      volume_24h_usd: items.length,
+      timestamp,
+      source: 'DummyJSON Open Product API',
+      sourceUrl: searchUrl,
+      retrievalTimestamp: timestamp,
+      total_found: productData.total ?? items.length,
+      products: items,
+      paymentReceipt: {
+        protocol: 'x402 v2',
+        txHash: verification.txHash,
+        voucherDigest: verification.voucherDigest,
+        explorerUrl: verification.explorerUrl,
+        amountPaidUsdc: verification.amountPaid,
+        platformFeeUsdc: verification.platformFee,
+        settlementType: verification.settlementType,
+        settlementMode: verification.mode,
+      },
+    };
+
+    safeSetHeaders(res, x402Engine.createPaymentResponseHeader(verification));
+    res.status(200).json(serviceOutput);
+  } catch (productErr: any) {
+    console.error(`[DataAgent] Product query failed for ${rawQuery}:`, productErr.message);
+    res.status(502).json({
+      error: 'Product Data Retrieval Failed',
+      message: `Failed to query live product data source: ${productErr.message}`,
+      source: 'DummyJSON Open Product API',
+      sourceUrl: searchUrl,
+      retrievalTimestamp: timestamp,
+    });
+  }
 }

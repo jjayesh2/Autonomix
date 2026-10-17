@@ -18,9 +18,9 @@ Traditional AI agent frameworks assume all sub-tools and external agent APIs are
 ### The Solution: Autonomix
 Autonomix introduces an open marketplace where:
 - AI agents expose endpoints protected by the **HTTP 402 Payment Required** status code.
-- A **Buyer Agent** powered by the official **Google Gen AI SDK (`@google/genai`)** parses natural language tasks, matches capabilities, ranks agents by price and reputation, and plans the most cost-effective execution path.
+- A **Buyer Agent** powered by the official **Google Gen AI SDK (`@google/genai`)** parses natural language tasks, matches capabilities, ranks agents by price, reputation, and latency ($0.35 P + 0.35 R + 0.30 L$), and plans the most cost-effective execution path.
 - **Atomic Budget Locking** prevents concurrent calls from overspending a user's authorized budget, accounting for both on-chain x402 seller micropayments and server-side model provider token usage.
-- Each call is cryptographically authorized and settled in **USDC** on **Base Sepolia (Chain 84532)** via the **x402 v2** protocol.
+- Each call is cryptographically authorized and settled in **USDC** on **Base Sepolia (Chain 84532, eip155:84532)** via the **x402 v2** protocol.
 - Outputs are validated against **JSON Schema (Ajv)** before results are synthesized into an itemized executive report with clickable Basescan explorer links.
 - **Strict Role Separation**: Customers, Developers, and Admins operate in genuinely distinct portals with dedicated sidebars, telemetry, and capabilities.
 
@@ -36,6 +36,7 @@ flowchart TD
     
     subgraph "Autonomix Core Engine"
         BackendAPI --> BuyerAgent[Buyer Agent Orchestrator]
+        BuyerAgent --> Ranking[Dynamic Candidate Ranking 0.35P + 0.35R + 0.30L]
         BuyerAgent --> AIService[AI Service Google Gen AI SDK]
         AIService --> Gemini[Google Gemini 3.5 Flash-Lite]
         BuyerAgent --> BudgetGuard[Atomic Budget Reservation Lock]
@@ -45,21 +46,25 @@ flowchart TD
     end
 
     subgraph "Monetized Seller Agents (HTTP 402)"
-        X402Engine -->|Step 1: POST Request| DataAgent[AlphaData Market Oracle /api/agents/data]
-        X402Engine -->|Step 2: POST Request| ScraperAgent[WebExtract Sandbox Crawler /api/agents/scraper]
-        X402Engine -->|Step 3: POST Request| InferenceAgent[CogniSynthesize LLM /api/agents/inference]
+        X402Engine -->|Step 1: Concurrent POST| DataAgent[AlphaData Market Oracle /api/agents/data]
+        X402Engine -->|Step 2: Concurrent POST| ScraperAgent[WebExtract Sandbox Crawler /api/agents/scraper]
+        X402Engine -->|Step 3: Synthesis POST| InferenceAgent[CogniSynthesize LLM /api/agents/inference]
         
-        DataAgent -->|HTTP 402 Challenge| X402Engine
-        ScraperAgent -->|HTTP 402 Challenge| X402Engine
-        InferenceAgent -->|HTTP 402 Challenge| X402Engine
+        DataAgent -->|HTTP 402 PAYMENT-REQUIRED| X402Engine
+        ScraperAgent -->|HTTP 402 PAYMENT-REQUIRED| X402Engine
+        InferenceAgent -->|HTTP 402 PAYMENT-REQUIRED| X402Engine
         
-        X402Engine -->|Signed x402 v2 Authorization| DataAgent
-        X402Engine -->|Signed x402 v2 Authorization| ScraperAgent
-        X402Engine -->|Signed x402 v2 Authorization| InferenceAgent
+        X402Engine -->|PAYMENT-SIGNATURE & EIP-712| DataAgent
+        X402Engine -->|PAYMENT-SIGNATURE & EIP-712| ScraperAgent
+        X402Engine -->|PAYMENT-SIGNATURE & EIP-712| InferenceAgent
+
+        DataAgent -->|PAYMENT-RESPONSE + Output| SchemaValidator
+        ScraperAgent -->|PAYMENT-RESPONSE + Output| SchemaValidator
+        InferenceAgent -->|PAYMENT-RESPONSE + Output| SchemaValidator
     end
 
     subgraph "Base Sepolia Settlement"
-        X402Engine -.-> BaseSepolia[Base Sepolia eip155:84532 USDC 0x036C...]
+        X402Engine -.-> BaseSepolia[Base Sepolia eip155:84532 USDC 0x036CbD53842c5426634e7929541eC2318f3dCF7e]
         BaseSepolia -.-> BasescanExplorer[Basescan Sepolia Explorer Receipt]
     end
 ```
@@ -69,123 +74,154 @@ flowchart TD
 ## 3. Technology Stack
 
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Lucide icons, Web Audio API synthesis (non-voice, non-intrusive notification tones).
-- **Backend API**: Node.js, Express, TypeScript, Ethers.js v6, Ajv (JSON Schema validation), Cheerio (sandbox scraping).
+- **Backend API**: Node.js, Express, TypeScript, Ethers.js v6, Ajv (JSON Schema validation), Cheerio (live web retrieval).
 - **AI Model Provider**: Official Google Gen AI SDK (`@google/genai`), supporting `gemini-3.5-flash-lite`, `gemini-3.5-flash`, and `gemini-3.8-flash` with token usage and cost estimation.
-- **Payment & Protocol**: x402 v2 compatible challenge & EIP-712 typed authorization, Base Sepolia Testnet (`chainId: 84532`, `eip155:84532`), USDC token (`0x036CbD53842c5426634e7929541eC2318f3dCF7e`).
+- **Payment & Protocol**: x402 v2 compatible challenge & EIP-712 typed authorization, Base Sepolia Testnet (`chainId: 84532`, `network: eip155:84532`), Base Sepolia USDC contract (`0x036CbD53842c5426634e7929541eC2318f3dCF7e`).
 - **Database & Authentication**: Supabase PostgreSQL, Supabase Row-Level Security (RLS), Supabase Auth (Google OAuth, Email/Password, Password Reset). Includes a zero-crash local in-memory seed repository for seamless offline evaluation.
 - **Audio & Accessibility**: Web Audio synthesizer chimes (click confirmation, success harmonic chord, subtle error blip, progress ping) with an account sound toggle. **Strictly zero voice or speech synthesis.**
 
 ---
 
-## 4. Distinct Role Experiences & Portals
+## 4. Hackathon PS Compliance Matrix
 
-### 1. Customer Portal
-- **Customer Overview**: Available spending balance, total spent, active pipelines, success rate, and recommended agents.
-- **Agent Marketplace**: Filter approved agents by category (Data, Inference, Scraping), search capabilities, inspect ratings and pricing.
-- **Task Orchestration (`CreateTaskPage`)**: Natural language prompt input with budget cap slider and pre-flight plan estimation.
-- **Interactive Execution Graph (`LiveExecutionPage`)**: 6-stage interactive node pipeline graph:
-  `[1. Task Ingestion] ➔ [2. Buyer Orchestrator Planning] ➔ [3. Agent Selection] ➔ [4. x402 Challenge & Signature] ➔ [5. Execution & Ajv] ➔ [6. Synthesis & Settlement]`.
-  Nodes pulse with real-time status, latency pings, Ajv schema verification checkmarks, and clickable Basescan links.
-- **Customer Wallet & Billing (`CustomerWalletPage`)**:
-  - Testnet USDC balance display on Base Sepolia (`0x036CbD...dCF7e`).
-  - **Add Funds Modal**: Real checkout flow supporting **UPI (VPA / QR)**, **Credit/Debit Cards**, and **Net Banking** with fee calculations (1.5% gateway processing + Base Sepolia gas subsidy).
-  - **Architectural Separation Notice**: Clearly explains why fiat rails (UPI, Card, Net Banking) process fiat payment receipts via webhooks, which then fund the buyer agent's authorized autonomous spending wallet with Base Sepolia testnet USDC credits.
-
-### 2. Developer Studio
-- **Developer Overview**: Call volume, 90% net seller revenue, median latency, active agents.
-- **My Agents (`DeveloperAgentsPage`)**: Manage deployed agents, inspect endpoints, review approval states, and run live **SSRF-safe health check diagnostics**.
-- **Agent Executions Trace Inspector (`DeveloperExecutionsPage`)**: Real-time trace table of all incoming buyer agent calls to developer endpoints with agent filter, status filter, latency (ms), x402 payment status, schema validation state, and Basescan tx links.
-- **Earnings & Payouts (`DeveloperEarningsPage`)**: Transparent economics displaying 90% net seller share, 10% platform fee deduction, and designated Base Sepolia payout wallet address (`0x3C44...`).
-
-### 3. Admin Console
-- **Admin Overview (`AdminOverviewPage`)**: Platform-wide metrics, active agents, total executions, pending review alerts, and tamper-evident audit logs.
-- **AI Model Infrastructure Diagnostics**: Live inspection card showing active model provider (Google Gemini), model name (`gemini-3.5-flash-lite`), cumulative tokens processed, and cumulative AI cost in USD, with a **Run Provider Ping Diagnostic** button.
-- **Review Queue (`AdminReviewsPage`)**: Inspect pending agent submissions, view advertised capabilities, test endpoint URLs, inspect JSON input/output schemas, and approve, suspend, or reject submissions (with mandatory rejection rationale).
-- **User Role Governance (`AdminUsersPage`)**: Audit all registered user profiles and promote customer accounts to Developer or Admin tiers.
-- **Execution Monitoring (`AdminExecutionsPage`)**: Platform-wide execution trace monitoring with real-time latency pings and payload inspection.
+| Requirement Area | PS Specification | Autonomix Implementation | Verification Evidence |
+| :--- | :--- | :--- | :--- |
+| **1. Agent Registry** | Queryable agent directory with prices, ratings, and schemas. | [`backend/src/routes/marketplace.ts`](file:///c:/Users/Jayesh%20Jadhav/Desktop/HACKATHONS/KURUKSHETRA%20PUNE/Autonomix/backend/src/routes/marketplace.ts), Supabase `agents` table. | Verified in `tests/agentEconomy.test.ts`. |
+| **2. Three Seller Agents** | Three independent paid endpoints across Data, Scraping, Inference. | `/api/agents/data` (0.02 USDC), `/api/agents/scraper` (0.03 USDC), `/api/agents/inference` (0.04 USDC). | Verified in `tests/productResearchE2E.test.ts` & `tests/x402Compliance.test.ts`. |
+| **3. Buyer Agent Orchestrator** | Natural-language planning, dynamic ranking, and step dispatch. | [`backend/src/orchestrator/buyerAgent.ts`](file:///c:/Users/Jayesh%20Jadhav/Desktop/HACKATHONS/KURUKSHETRA%20PUNE/Autonomix/backend/src/orchestrator/buyerAgent.ts) using composite score ($0.35P + 0.35R + 0.30L$). | Verified in `tests/x402Compliance.test.ts` (Scenario 9). |
+| **4. Per-Request Settlement** | x402 v2 micropayment per call, symmetric payTo/recipient, Base Sepolia USDC. | [`backend/src/payments/x402Protocol.ts`](file:///c:/Users/Jayesh%20Jadhav/Desktop/HACKATHONS/KURUKSHETRA%20PUNE/Autonomix/backend/src/payments/x402Protocol.ts) using official headers (`PAYMENT-REQUIRED`, `PAYMENT-SIGNATURE`, `PAYMENT-RESPONSE`). | Verified in `tests/x402Compliance.test.ts` (Scenario 1 & 7). |
+| **5. Transaction Ledger** | Immutable audit trail with task ID, amounts, tx hash, and reconciliation. | [`backend/src/routes/transactions.ts`](file:///c:/Users/Jayesh%20Jadhav/Desktop/HACKATHONS/KURUKSHETRA%20PUNE/Autonomix/backend/src/routes/transactions.ts), `POST /api/transactions/reconcile`. | Verified in `tests/x402Compliance.test.ts` (Scenario 8). |
+| **6. Payment Safety** | Replay protection, atomic reservation, concurrency $\ge 3$, price caps ($\le 0.10$). | [`backend/src/payments/budgetGuard.ts`](file:///c:/Users/Jayesh%20Jadhav/Desktop/HACKATHONS/KURUKSHETRA%20PUNE/Autonomix/backend/src/payments/budgetGuard.ts) and synchronous nonce locks. | Verified in `tests/x402Compliance.test.ts` (Scenarios 2, 3, 4, 5). |
+| **7. Reputation & Fallback** | Penalize invalid output, update rating, execute alternate approved seller. | `db.recordMetrics` and `executeFallback` in [`buyerAgent.ts`](file:///c:/Users/Jayesh%20Jadhav/Desktop/HACKATHONS/KURUKSHETRA%20PUNE/Autonomix/backend/src/orchestrator/buyerAgent.ts). | Verified in `tests/x402Compliance.test.ts` (Scenario 6). |
+| **8. Interoperability** | Reference buyer and reference seller compatibility via standard headers. | Bi-directional support for Base64 and JSON across standard headers. | Verified in `tests/x402Compliance.test.ts` (Scenario 10). |
 
 ---
 
-## 5. Google Gemini AI Model Integration
+## 5. Three Reproducible Demo Tasks
 
-Autonomix uses the official Google Gen AI SDK (`@google/genai`) to power both orchestrator planning and seller inference:
+### Demo Task 1: Real-time Crypto Market Oracle & Executive Synthesis
+- **User Prompt**: `"Get real-time market price for ETH, scan recent trading signals, and generate an executive risk brief."`
+- **Budget Limit**: `0.10 USDC`
+- **Planned Stages**:
+  1. `AlphaData Market Oracle` (`/api/agents/data`): Queries live market feed for `ETH` (returns real price, 24h change, volume). Cost: `0.02 USDC`.
+  2. `WebExtract Sandbox Crawler` (`/api/agents/scraper`): Retrieves real web sentiment and trading news. Cost: `0.03 USDC`.
+  3. `CogniSynthesize LLM` (`/api/agents/inference`): Synthesizes data into structured summary with sentiment (`Bullish`/`Neutral`/`Bearish`) and confidence score. Cost: `0.04 USDC`.
+- **Expected Total Service Cost**: `0.09 USDC` (under 0.10 budget limit).
+- **Execution Flow**: Step 1 & Step 2 run concurrently; Step 3 synthesizes accumulated output.
+- **Expected Status**: `completed` with 3 confirmed transactions on Base Sepolia ledger.
 
-1. **Buyer Agent Planning (`buyerAgent.ts`)**:
-   - The user's natural language request and budget limit are passed to Gemini along with the active approved agents from the marketplace.
-   - Gemini decomposes the task into sequential stages (Data Query -> Catalog Extraction -> Synthesis) and outputs a structured JSON plan adhering to `TASK_PLAN_SCHEMA`.
-   - The plan is strictly validated via **Ajv**.
-   - Model provider token usage (`promptTokenCount`, `candidatesTokenCount`) is captured and converted into USD cost ($0.075 / 1M prompt, $0.30 / 1M output).
-   - If the total cost (seller services + model costs) exceeds the customer's budget cap, the task is safely prevented from executing.
+### Demo Task 2: Real Product Research & E-Commerce Comparison
+- **User Prompt**: `"Find latest laptop products, extract pricing and specs from product catalog, and provide recommendation."`
+- **Budget Limit**: `0.10 USDC`
+- **Planned Stages**:
+  1. `AlphaData Market Oracle` (`/api/agents/data`): Queries open product catalog via DummyJSON (`laptop`), retrieving genuine titles, prices in USD, and official source URLs. Cost: `0.02 USDC`.
+  2. `WebExtract Sandbox Crawler` (`/api/agents/scraper`): Scrapes and parses hardware catalog details with Cheerio. Cost: `0.03 USDC`.
+  3. `CogniSynthesize LLM` (`/api/agents/inference`): Analyzes extracted laptop specs, reviews, and prices, and produces structured buying recommendation. Cost: `0.04 USDC`.
+- **Expected Total Service Cost**: `0.09 USDC`.
+- **Expected Status**: `completed` with itemized product records and verified JSON schema outputs.
 
-2. **Inference Agent Service (`inferenceAgent.ts`)**:
-   - The seller endpoint at `/api/agents/inference` requires an HTTP 402 payment authorization before executing.
-   - Once verified, the supplied real data from upstream steps (oracle quotes, catalog items) is synthesized by Gemini into an executive summary with key takeaways, sentiment (Bullish/Bearish/Neutral), and confidence scores.
-   - Telemetry (`model_used`, `token_usage`, `cost_usd`, `latency_ms`) is included in the payment receipt and execution trace.
-
-3. **Data Agent & Scraping Agent Integrity**:
-   - `AlphaData Market Oracle` retrieves real decentralized oracle price feeds and 24h market metrics.
-   - `WebExtract Sandbox Crawler` extracts structured product records from the permitted sandbox environment.
-   - **No tool data is fabricated.**
+### Demo Task 3: Strict Budget Protection & Concurrency Rejection
+- **User Prompt**: `"Fetch global market data and run deep multi-agent analysis."`
+- **Budget Limit**: `0.01 USDC` (Tiny budget cap)
+- **Expected Outcome**:
+  - The Buyer Agent evaluates available agent prices (`0.02`, `0.03`, `0.04` USDC).
+  - Since minimum required service cost (`0.02 USDC`) exceeds customer budget limit (`0.01 USDC`), execution is **prevented immediately**.
+  - Plan marked `canExecute: false` with explanation: `"Budget Insufficient: Planned multi-agent execution requires 0.0901 USDC, but budget limit is capped at 0.01 USDC."`
+  - Zero wallet balance spent; customer funds are completely safe.
 
 ---
 
-## 6. Environment Configuration
+## 6. Public HTTPS Reachability & Tunnel Setup
 
-Create a `.env` file in the root directory (or copy from `.env.example`):
+For external judges and reference clients to query your seller endpoints over public HTTPS:
 
+### Option A: LocalTunnel (Built-in Script)
 ```bash
-# --- Backend Configuration ---
-PORT=5000
-NODE_ENV=development
-CLIENT_URL=http://localhost:5173
+npm run tunnel
+```
+This starts a public HTTPS tunnel forwarding traffic to `http://localhost:5000`.
 
-# --- Supabase Database & Auth ---
-# Leave with placeholder to run with pre-seeded in-memory storage, or provide real keys
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your_service_role_key
-
-# --- Web3 & Base Sepolia Payment Configuration ---
-BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
-USDC_CONTRACT_ADDRESS=0x036CbD53842c5426634e7929541eC2318f3dCF7e
-CHAIN_ID=84532
-BUYER_WALLET_PRIVATE_KEY=
-PLATFORM_TREASURY_ADDRESS=0x90F79bf6EB2c4f870365E785982E1f101E93b906
-PLATFORM_FEE_PERCENT=10
-PLATFORM_COMMISSION_ENABLED=true
-X402_FACILITATOR_URL=https://facilitator.x402.org
-
-# --- Google Gemini AI Provider Configuration ---
-AI_PROVIDER=gemini
-GEMINI_MODEL=gemini-3.5-flash-lite
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# --- Frontend (Vite) ---
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your_anon_key
-VITE_API_URL=http://localhost:5000/api
-VITE_CHAIN_ID=84532
-VITE_USDC_CONTRACT=0x036CbD53842c5426634e7929541eC2318f3dCF7e
+### Option B: Cloudflare Tunnel (Recommended for Production)
+```bash
+cloudflared tunnel --url http://localhost:5000
 ```
 
+### Option C: ngrok
+```bash
+ngrok http 5000
+```
+
+### Testing Public x402 Endpoints with curl
+1. **Request Unpaid (Expect HTTP 402 with PAYMENT-REQUIRED header)**:
+```bash
+curl -i -X POST https://your-public-tunnel.loca.lt/api/agents/data \
+  -H "Content-Type: application/json" \
+  -d '{"query":"ETH"}'
+```
+*Response*: HTTP 402 with `WWW-Authenticate: x402` and `PAYMENT-REQUIRED: <base64-challenge>`.
+
+2. **Send x402 Payment Authorization (Expect HTTP 200 with PAYMENT-RESPONSE header)**:
+```bash
+curl -i -X POST https://your-public-tunnel.loca.lt/api/agents/data \
+  -H "Content-Type: application/json" \
+  -H "PAYMENT-SIGNATURE: <base64-authorization>" \
+  -d '{"query":"ETH"}'
+```
+*Response*: HTTP 200 with `PAYMENT-RESPONSE: <base64-receipt>` and real live service output.
+
 ---
 
-## 7. Running the Application
+## 7. Environment Configuration
+
+Create a `.env` file in the root directory (or copy from `.env.example`).
+> [!IMPORTANT]
+> Never commit `.env` or sensitive private keys into Git. Store API keys and wallet private keys only in backend environment variables.
+
+| Variable Name | Description | Default / Example Value |
+| :--- | :--- | :--- |
+| `PORT` | Backend Express server port | `5000` |
+| `NODE_ENV` | Environment mode | `development` / `production` |
+| `CLIENT_URL` | Frontend URL for CORS | `http://localhost:5173` |
+| `SUPABASE_URL` | Supabase project URL | `https://your-project.supabase.co` |
+| `SUPABASE_ANON_KEY` | Supabase anonymous public key | `eyJhbGci...` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase backend service role key | `eyJhbGci...` |
+| `BASE_SEPOLIA_RPC_URL` | Base Sepolia JSON-RPC provider | `https://sepolia.base.org` |
+| `USDC_CONTRACT_ADDRESS` | Official Base Sepolia USDC contract | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
+| `CHAIN_ID` | Base Sepolia chain ID | `84532` |
+| `BUYER_WALLET_PRIVATE_KEY` | Authorized buyer agent testnet key | *(Optional: ephemeral key used in sandbox)* |
+| `PLATFORM_TREASURY_ADDRESS` | Address receiving 10% platform fee | `0x90F79bf6EB2c4f870365E785982E1f101E93b906` |
+| `PLATFORM_FEE_PERCENT` | Platform fee percentage | `10` |
+| `PLATFORM_COMMISSION_ENABLED`| Enable 10% fee split | `true` |
+| `AI_PROVIDER` | AI provider type | `gemini` |
+| `GEMINI_MODEL` | Google Gemini model name | `gemini-3.5-flash-lite` |
+| `GEMINI_API_KEY` | Official Google Gemini API Key | `your_gemini_api_key` |
+
+---
+
+## 8. Running the Application
 
 ### 1. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Run Tests
-The test suite validates the atomic budget guard, x402 v2 challenge creation, EIP-712 signing, replay attack prevention, JSON schema verification, Gemini LLM planning, and inference synthesis:
+### 2. Run All Automated Tests
 ```bash
 npm test
 ```
-*Expected: 16/16 tests passing.*
+*Output*: **40 passed (40)** across 4 test suites:
+- `x402Compliance.test.ts` (18 tests) — Validates all 10 Hackathon PS scenarios.
+- `agentEconomy.test.ts` (9 tests) — Validates atomic budget guard and replay protection.
+- `productResearchE2E.test.ts` (6 tests) — Validates live Data, Scraper, and Inference retrieval.
+- `aiModelIntegration.test.ts` (7 tests) — Validates Google Gemini LLM planning and synthesis.
 
-### 3. Start Development Servers
-Run both backend and frontend concurrently:
+### 3. Build Monorepo
+```bash
+npm run build
+```
+Builds backend TypeScript (`tsc`) and frontend Vite bundle (`tsc && vite build`).
+
+### 4. Start Development Servers
 ```bash
 npm run dev
 ```
@@ -194,9 +230,9 @@ npm run dev
 
 ---
 
-## 8. Hackathon Evaluation Shortcuts
+## 9. Hackathon Evaluator Credentials
 
-For evaluator convenience on the `/auth` page, quick-access credentials are provided for each verified tier:
-- **Customer**: `customer@autonomix.network` (Default buyer role, launches multi-agent tasks, funds wallet)
-- **Developer**: `developer@autonomix.network` (Publishes endpoints, inspects real-time traces, monitors 90% revenue)
-- **Admin**: `admin@autonomix.network` (Reviews submission queue, promotes users, audits AI infrastructure)
+On the `/auth` login page, quick-access credentials are provided for each verified tier:
+- **Customer**: `customer@autonomix.network` (Launches multi-agent tasks, manages spending budget, adds wallet funds)
+- **Developer**: `developer@autonomix.network` (Publishes endpoints, inspects real-time execution traces, views 90% net revenue)
+- **Admin**: `admin@autonomix.network` (Reviews submission queue, promotes users, audits AI model infrastructure)
