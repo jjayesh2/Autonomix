@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GeminiProvider, MissingAIKeyError } from '../src/ai/geminiProvider.js';
-import { AIService } from '../src/ai/aiService.js';
+import {
+  GeminiProvider,
+  MissingAIKeyError,
+  AIQuotaExhaustedError,
+  isRateLimitOrQuotaError,
+  calculateBackoffDelay,
+} from '../src/ai/geminiProvider.js';
+import { AIService, aiService } from '../src/ai/aiService.js';
 import { buyerAgent } from '../src/orchestrator/buyerAgent.js';
 import { db } from '../src/db/supabase.js';
 import { budgetGuard } from '../src/payments/budgetGuard.js';
@@ -9,6 +15,7 @@ describe('Autonomix — AI Model Provider & Structured Orchestration Tests', () 
   const dummyTaskId = 'test-ai-task-001';
 
   beforeEach(async () => {
+    aiService.clearPlanCache();
     await db.createTask({
       id: dummyTaskId,
       user_id: 'c0000000-0000-0000-0000-000000000001',
@@ -56,7 +63,6 @@ describe('Autonomix — AI Model Provider & Structured Orchestration Tests', () 
       };
 
       if (!provider.isConfigured()) {
-        // Unconfigured test check
         await expect(
           provider.generateStructured({
             prompt: 'Return empty object',
@@ -65,9 +71,42 @@ describe('Autonomix — AI Model Provider & Structured Orchestration Tests', () 
         ).rejects.toThrow(MissingAIKeyError);
       }
     });
+
+    it('correctly identifies HTTP 429 quota exhaustion and parses retry delay', () => {
+      const err429 = { status: 429, message: 'Resource has been exhausted (e.g. check quota). Please retry in 12s.' };
+      const parsed = isRateLimitOrQuotaError(err429);
+      expect(parsed.isQuota).toBe(true);
+      expect(parsed.retryAfterSec).toBe(12);
+
+      const errNormal = new Error('Socket closed unexpectedly');
+      expect(isRateLimitOrQuotaError(errNormal).isQuota).toBe(false);
+    });
+
+    it('calculates bounded exponential backoff with jitter', () => {
+      const delayAttempt0 = calculateBackoffDelay(0);
+      expect(delayAttempt0).toBeGreaterThanOrEqual(750);
+      expect(delayAttempt0).toBeLessThanOrEqual(1500);
+
+      const delayAttempt1 = calculateBackoffDelay(1);
+      expect(delayAttempt1).toBeGreaterThanOrEqual(1500);
+      expect(delayAttempt1).toBeLessThanOrEqual(3000);
+
+      // Explicit retry delay from header
+      const delayWithRetryAfter = calculateBackoffDelay(0, 5);
+      expect(delayWithRetryAfter).toBeGreaterThanOrEqual(5000);
+      expect(delayWithRetryAfter).toBeLessThanOrEqual(5600);
+    });
+
+    it('instantiates AIQuotaExhaustedError with retryable status 429 and retryAfter seconds', () => {
+      const quotaErr = new AIQuotaExhaustedError('Google Gemini quota exhausted', 15);
+      expect(quotaErr.status).toBe(429);
+      expect(quotaErr.retryable).toBe(true);
+      expect(quotaErr.retryAfterSeconds).toBe(15);
+      expect(quotaErr.name).toBe('AIQuotaExhaustedError');
+    });
   });
 
-  describe('2. Buyer Agent AI Planning & Strict Budget Enforcement', () => {
+  describe('2. Buyer Agent AI Planning, Deduplication & Strict Budget Enforcement', () => {
     it('produces a structured orchestration plan within budget cap', async () => {
       const plan = await buyerAgent.planTask(
         'Retrieve Ethereum oracle prices and summarize market trends',
@@ -80,6 +119,29 @@ describe('Autonomix — AI Model Provider & Structured Orchestration Tests', () 
       expect(plan.steps[0].agent).toBeDefined();
       expect(plan.steps[0].actionType).toBeDefined();
       expect(plan.explanation).toBeDefined();
+    });
+
+    it('deduplicates concurrent planning requests and serves cached plans', async () => {
+      const taskQuery = 'Research decentralized compute networks';
+      const budget = 0.12;
+
+      // Dispatch 2 concurrent planning requests with identical arguments
+      const [planPromise1, planPromise2] = [
+        buyerAgent.planTask(taskQuery, budget),
+        buyerAgent.planTask(taskQuery, budget),
+      ];
+
+      const [res1, res2] = await Promise.all([planPromise1, planPromise2]);
+
+      // Both must succeed and share identical step configuration
+      expect(res1.canExecute).toBe(true);
+      expect(res2.canExecute).toBe(true);
+      expect(res1.steps.length).toBe(res2.steps.length);
+
+      // Subsequent sequential request returns cached plan with 0 latency
+      const cachedPlan = await buyerAgent.planTask(taskQuery, budget);
+      expect(cachedPlan.canExecute).toBe(true);
+      expect(cachedPlan.aiMetadata?.latencyMs).toBe(0);
     });
 
     it('strictly marks plan as non-executable if service cost exceeds budget cap', async () => {
@@ -107,8 +169,8 @@ describe('Autonomix — AI Model Provider & Structured Orchestration Tests', () 
 
   describe('3. Inference Agent Output Validation', () => {
     it('synthesizes verified structured output with sentiment and confidence', async () => {
-      const aiService = new AIService();
-      const result = await aiService.runInferenceWithAI(
+      const service = new AIService();
+      const result = await service.runInferenceWithAI(
         'Oracle quote: ETH price 3480.50 USDC (+3.42% 24h), Volume: 18.4B USD. Hardware catalog items: 5 in stock.',
         'Synthesize intelligence report for executive review'
       );

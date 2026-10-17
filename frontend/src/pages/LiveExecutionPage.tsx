@@ -85,16 +85,16 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
 
   if (!taskId) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-        <Cpu className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+      <div className="max-w-2xl mx-auto px-4 py-20 text-center animate-fade-in">
+        <Cpu className="w-12 h-12 text-[#9CA3AF] mx-auto mb-4" />
         <h2 className="text-xl font-bold text-white">No active task selected</h2>
-        <p className="text-xs text-slate-400 mt-2 mb-6">Create a new task to view live execution and x402 payment settlements.</p>
+        <p className="text-xs text-[#9CA3AF] mt-2 mb-6">Create a new task to view live execution and x402 payment settlements.</p>
         <button
           onClick={() => {
             playClick();
             onNavigate('create_task');
           }}
-          className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-colors"
+          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-[#819BFF] hover:from-indigo-500 hover:to-[#819BFF] text-white font-semibold text-xs shadow-glow-accent transition-all"
         >
           Create Task
         </button>
@@ -156,18 +156,18 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
   const pipelineNodes = getPipelineNodes();
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-mono mb-2 border border-cyan-500/20">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#819BFF]/10 text-[#819BFF] text-xs font-mono mb-2 border border-[#819BFF]/20">
+            <span className="w-2 h-2 rounded-full bg-[#819BFF] animate-ping" />
             <span>Autonomous Orchestration Trace</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             Live Execution & Settlement Graph
           </h1>
-          <p className="text-xs text-slate-400 mt-1 max-w-xl truncate">
+          <p className="text-xs text-[#9CA3AF] mt-1 max-w-xl truncate">
             {task?.description || 'Executing task requirements across discovered agents...'}
           </p>
         </div>
@@ -178,7 +178,7 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
               playClick();
               onNavigate('results');
             }}
-            className="self-start sm:self-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-glow-accent transition-all flex items-center gap-2"
+            className="self-start sm:self-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-glow-accent transition-all flex items-center gap-2 transform hover:-translate-y-0.5"
           >
             <span>View Final Brief & Cost Itemization</span>
             <ArrowRight className="w-4 h-4" />
@@ -188,56 +188,56 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
 
       {/* Metrics Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-[#0F1626] border border-slate-800">
-          <span className="text-[11px] text-slate-500 block">Status:</span>
+        <div className="p-4 rounded-2xl bg-[#11141A] border border-white/[0.08]">
+          <span className="text-[11px] text-[#9CA3AF] block">Status:</span>
           <span
             className={`text-sm font-bold uppercase font-mono mt-1 block ${
               task?.status === 'completed'
                 ? 'text-emerald-400'
                 : task?.status === 'failed'
                 ? 'text-rose-400'
-                : 'text-cyan-400 animate-pulse'
+                : 'text-[#819BFF] animate-pulse'
             }`}
           >
             {task?.status || 'Planning'}
           </span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[#0F1626] border border-slate-800">
-          <span className="text-[11px] text-slate-500 block">Budget Cap:</span>
+        <div className="p-4 rounded-2xl bg-[#11141A] border border-white/[0.08]">
+          <span className="text-[11px] text-[#9CA3AF] block">Budget Cap:</span>
           <span className="text-sm font-bold font-mono text-white mt-1 block">
             {task?.budget_limit ? task.budget_limit.toFixed(2) : '0.10'} USDC
           </span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[#0F1626] border border-slate-800">
-          <span className="text-[11px] text-slate-500 block">Committed Spend:</span>
+        <div className="p-4 rounded-2xl bg-[#11141A] border border-white/[0.08]">
+          <span className="text-[11px] text-[#9CA3AF] block">Committed Spend:</span>
           <span className="text-sm font-bold font-mono text-emerald-400 mt-1 block">
             {task?.total_cost ? task.total_cost.toFixed(2) : '0.00'} USDC
           </span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[#0F1626] border border-slate-800">
-          <span className="text-[11px] text-slate-500 block">Remaining Budget:</span>
-          <span className="text-sm font-bold font-mono text-slate-300 mt-1 block">
+        <div className="p-4 rounded-2xl bg-[#11141A] border border-white/[0.08]">
+          <span className="text-[11px] text-[#9CA3AF] block">Remaining Budget:</span>
+          <span className="text-sm font-bold font-mono text-[#F3F4F6] mt-1 block">
             {remainingBudget.toFixed(2)} USDC
           </span>
         </div>
       </div>
 
       {/* INTERACTIVE NODE PIPELINE GRAPH */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-indigo-500/30 space-y-6 relative overflow-hidden">
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#11141A] border border-white/[0.08] space-y-6 relative overflow-hidden shadow-card-elevated">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <Sparkles className="w-4 h-4 text-[#819BFF]" />
               <span>Multi-Agent Orchestration Pipeline Graph</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-[#9CA3AF] mt-0.5">
               Live progression of the buyer agent coordinating discovery, cryptographic payment handshakes, and result validation.
             </p>
           </div>
-          <span className="text-[11px] font-mono text-indigo-400 font-semibold px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
+          <span className="text-[11px] font-mono text-[#819BFF] font-semibold px-2.5 py-1 rounded-full bg-[#819BFF]/10 border border-[#819BFF]/20">
             Base Sepolia • Chain 84532
           </span>
         </div>
@@ -250,7 +250,7 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
               y1="3"
               x2="580"
               y2="3"
-              stroke="rgba(99, 102, 241, 0.25)"
+              stroke="rgba(255, 255, 255, 0.08)"
               strokeWidth="2"
             />
             <line
@@ -258,7 +258,7 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
               y1="3"
               x2="580"
               y2="3"
-              stroke="#06B6D4"
+              stroke="#819BFF"
               strokeWidth="2"
               className="svg-flow-path"
             />
@@ -267,7 +267,7 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
 
         {/* Pipeline Nodes Row */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3 pt-2">
-          {pipelineNodes.map((node, index) => {
+          {pipelineNodes.map((node) => {
             const Icon = node.icon;
             const isRunning = node.status === 'running';
             const isCompleted = node.status === 'completed';
@@ -283,14 +283,14 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
                 }}
                 className={`relative p-3.5 rounded-2xl border transition-all cursor-pointer ${
                   isSelected
-                    ? 'ring-2 ring-cyan-400 bg-slate-900 border-cyan-500/50'
+                    ? 'ring-2 ring-[#819BFF] bg-[#171A22] border-[#819BFF]/60'
                     : isRunning
-                    ? 'bg-cyan-950/30 border-cyan-500/50 shadow-glow-cyan'
+                    ? 'bg-[#171A22] border-[#819BFF] shadow-glow-blue'
                     : isCompleted
-                    ? 'bg-slate-900/80 border-emerald-500/30 hover:border-slate-700'
+                    ? 'bg-[#0D0F14] border-emerald-500/40 hover:border-emerald-500/60'
                     : isFailed
-                    ? 'bg-rose-950/20 border-rose-500/30'
-                    : 'bg-slate-900/40 border-slate-800 opacity-60 hover:opacity-80'
+                    ? 'bg-[#0D0F14] border-rose-500/40'
+                    : 'bg-[#0D0F14] border-white/[0.06] opacity-60 hover:opacity-100'
                 }`}
               >
                 {/* Node Status Badge */}
@@ -298,12 +298,12 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
                   <div
                     className={`w-7 h-7 rounded-xl flex items-center justify-center ${
                       isRunning
-                        ? 'bg-cyan-500/20 text-cyan-400 animate-pulse'
+                        ? 'bg-[#819BFF]/20 text-[#819BFF] animate-pulse'
                         : isCompleted
                         ? 'bg-emerald-500/20 text-emerald-400'
                         : isFailed
                         ? 'bg-rose-500/20 text-rose-400'
-                        : 'bg-slate-800 text-slate-500'
+                        : 'bg-[#171A22] text-[#9CA3AF]'
                     }`}
                   >
                     {isRunning ? (
@@ -320,12 +320,12 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
                 </div>
 
                 <div className="text-xs font-bold text-white truncate">{node.label}</div>
-                <div className="text-[10px] text-slate-400 truncate mt-0.5">{node.sublabel}</div>
+                <div className="text-[10px] text-[#9CA3AF] truncate mt-0.5">{node.sublabel}</div>
 
                 {isRunning && (
                   <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#819BFF] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#819BFF]"></span>
                   </span>
                 )}
               </div>
@@ -335,14 +335,14 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
 
         {/* Selected Node Details Drawer */}
         {selectedNode && (
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-xs space-y-2">
-            <div className="flex items-center justify-between text-slate-300 font-bold">
+          <div className="p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] text-xs space-y-2 animate-fade-in">
+            <div className="flex items-center justify-between text-[#F3F4F6] font-bold">
               <span>Stage {selectedNode} Deep Dive: {pipelineNodes[selectedNode - 1].label}</span>
-              <button onClick={() => setSelectedNode(null)} className="text-slate-500 hover:text-white">
+              <button onClick={() => setSelectedNode(null)} className="text-[#9CA3AF] hover:text-white">
                 ✕
               </button>
             </div>
-            <p className="text-slate-400 text-[11px]">
+            <p className="text-[#9CA3AF] text-[11px] leading-relaxed">
               {selectedNode === 1 && 'The natural language prompt is checked against the maximum budget limit. An atomic budget reservation is locked in the customer wallet to guarantee solvency.'}
               {selectedNode === 2 && 'The buyer orchestrator invokes planning algorithms to analyze required capabilities (Data, Inference, Scraping) and constructs the sequential DAG execution graph.'}
               {selectedNode === 3 && 'Marketplace agents are queried and ranked by composite score = 0.35 * price + 0.35 * reputation + 0.30 * latency, strictly checking admin approval status.'}
@@ -355,9 +355,9 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
       </div>
 
       {/* Execution Timeline & Steps */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#11141A] border border-white/[0.08] space-y-6 shadow-card-elevated">
         <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-indigo-400" />
+          <ShieldCheck className="w-4 h-4 text-[#819BFF]" />
           <span>Live Executed Steps & x402 Micropayments</span>
         </h3>
 
@@ -369,7 +369,7 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
             </div>
             <div className="pt-1">
               <h4 className="text-xs font-bold text-white">Stage 1: Requirements Ingested & Plan Formulated</h4>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-[#9CA3AF] mt-0.5">
                 {task?.rationale || 'Analyzing natural language requirements and discovering approved agents...'}
               </p>
             </div>
@@ -383,7 +383,7 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
                   step.status === 'completed'
                     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                     : step.status === 'running'
-                    ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400 animate-pulse'
+                    ? 'bg-[#819BFF]/10 border-[#819BFF]/30 text-[#819BFF] animate-pulse'
                     : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
                 }`}
               >
@@ -396,13 +396,13 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
                 )}
               </div>
 
-              <div className="flex-1 p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+              <div className="flex-1 p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-white">
                       Step {step.step_number}: {step.agent_name}
                     </span>
-                    <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                    <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-[#171A22] text-[#9CA3AF] border border-white/[0.06]">
                       {step.action_type}
                     </span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -414,10 +414,10 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-400 pt-1 font-mono">
+                <div className="flex flex-wrap items-center gap-4 text-[11px] text-[#9CA3AF] pt-1 font-mono">
                   <span>Latency: ~{step.latency_ms}ms</span>
                   <span>|</span>
-                  <span className="text-cyan-400">Payment: HTTP 402 Verified</span>
+                  <span className="text-[#819BFF]">Payment: HTTP 402 Verified</span>
                   {step.tx_hash && (
                     <>
                       <span>|</span>
@@ -425,7 +425,7 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
                         href={`https://sepolia.basescan.org/tx/${step.tx_hash}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-cyan-400 hover:underline flex items-center gap-1"
+                        className="text-[#819BFF] hover:underline flex items-center gap-1"
                       >
                         Tx: {step.tx_hash.slice(0, 10)}... <ExternalLink className="w-3 h-3" />
                       </a>
@@ -435,10 +435,10 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
 
                 {step.output_payload && (
                   <details className="mt-2 text-[11px]">
-                    <summary className="cursor-pointer text-indigo-400 hover:underline">
+                    <summary className="cursor-pointer text-[#819BFF] hover:underline">
                       View Verified JSON Output
                     </summary>
-                    <pre className="mt-2 p-3 rounded-xl bg-[#080C14] border border-slate-800 text-slate-300 overflow-x-auto font-mono text-[10px]">
+                    <pre className="mt-2 p-3 rounded-xl bg-[#08090C] border border-white/[0.08] text-slate-300 overflow-x-auto font-mono text-[10px]">
                       {JSON.stringify(step.output_payload, null, 2)}
                     </pre>
                   </details>
@@ -461,7 +461,7 @@ export const LiveExecutionPage: React.FC<LiveExecutionPageProps> = ({ taskId, on
               </div>
               <div className="pt-1">
                 <h4 className="text-xs font-bold text-white">Stage 6: Task Results Formatted & Budget Reconciled</h4>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-[#9CA3AF] mt-0.5">
                   All service outputs verified against output schemas and combined into the final brief. Uncommitted budget has been safely restored.
                 </p>
               </div>

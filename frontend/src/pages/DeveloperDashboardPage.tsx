@@ -56,19 +56,19 @@ export const DeveloperDashboardPage: React.FC<DeveloperDashboardPageProps> = ({ 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-mono mb-2 border border-indigo-500/20">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 text-[#819BFF] text-xs font-mono mb-2 border border-indigo-500/20">
             <Code2 className="w-3.5 h-3.5" />
             <span>Developer Studio & Service Monetization</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Developer Dashboard</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-3xl font-extrabold text-[#F3F4F6] tracking-tight">Developer Dashboard</h1>
+          <p className="text-xs text-[#9CA3AF] mt-1">
             Track real-time call volume, revenue, schema adherence, and approval status for your hosted agents.
           </p>
         </div>
 
         <button
           onClick={() => handleAction('submit_agent')}
-          className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-glow-accent transition-all flex items-center gap-2"
+          className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-[#819BFF] hover:opacity-95 text-[#F3F4F6] font-semibold text-xs shadow-glow-blue transition-all flex items-center gap-2"
         >
           <PlusCircle className="w-4 h-4" />
           Submit New Agent for Review
@@ -77,9 +77,9 @@ export const DeveloperDashboardPage: React.FC<DeveloperDashboardPageProps> = ({ 
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="p-6 rounded-2xl bg-[#0F1626] border border-slate-800">
+        <div className="p-6 rounded-2xl bg-[#11141A] border border-white/[0.08] card-interactive">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-slate-400">Total Revenue</span>
+            <span className="text-xs font-medium text-[#9CA3AF]">Total Revenue</span>
             <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
               <Coins className="w-4 h-4" />
             </div>
@@ -87,27 +87,27 @@ export const DeveloperDashboardPage: React.FC<DeveloperDashboardPageProps> = ({ 
           <div className="text-2xl font-bold font-mono text-emerald-400">
             {analytics?.totalRevenueUsdc ? analytics.totalRevenueUsdc.toFixed(2) : '14.38'} USDC
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Base Sepolia Settlements</span>
+          <span className="text-[11px] text-[#9CA3AF] mt-1 block">Base Sepolia Settlements</span>
         </div>
 
-        <div className="p-6 rounded-2xl bg-[#0F1626] border border-slate-800">
+        <div className="p-6 rounded-2xl bg-[#11141A] border border-white/[0.08] card-interactive">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-slate-400">Total Paid Calls</span>
-            <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+            <span className="text-xs font-medium text-[#9CA3AF]">Total Paid Calls</span>
+            <div className="p-2 rounded-lg bg-indigo-500/10 text-[#819BFF]">
               <Activity className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold font-mono text-white">
+          <div className="text-2xl font-bold font-mono text-[#F3F4F6]">
             {analytics?.totalCalls || 455}
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">
+          <span className="text-[11px] text-[#9CA3AF] mt-1 block">
             {analytics?.successfulCalls || 447} Successful ({analytics?.successRate || 98.2}%)
           </span>
         </div>
 
-        <div className="p-6 rounded-2xl bg-[#0F1626] border border-slate-800">
+        <div className="p-6 rounded-2xl bg-[#11141A] border border-white/[0.08] card-interactive">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-slate-400">Median Latency</span>
+            <span className="text-xs font-medium text-[#9CA3AF]">Median Latency</span>
             <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
               <Clock className="w-4 h-4" />
             </div>
@@ -115,33 +115,33 @@ export const DeveloperDashboardPage: React.FC<DeveloperDashboardPageProps> = ({ 
           <div className="text-2xl font-bold font-mono text-cyan-400">
             ~{analytics?.medianLatencyMs || 235}ms
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">HTTP 402 Verified Execution</span>
+          <span className="text-[11px] text-[#9CA3AF] mt-1 block">HTTP 402 Verified Execution</span>
         </div>
 
-        <div className="p-6 rounded-2xl bg-[#0F1626] border border-slate-800">
+        <div className="p-6 rounded-2xl bg-[#11141A] border border-white/[0.08] card-interactive">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-slate-400">Active Approved Agents</span>
-            <div className="p-2 rounded-lg bg-violet-500/10 text-violet-400">
+            <span className="text-xs font-medium text-[#9CA3AF]">Active Approved Agents</span>
+            <div className="p-2 rounded-lg bg-violet-500/10 text-[#9B8AFF]">
               <Shield className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl font-bold font-mono text-violet-300">
             {analytics?.agentCount || 3}
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Live in Global Marketplace</span>
+          <span className="text-[11px] text-[#9CA3AF] mt-1 block">Live in Global Marketplace</span>
         </div>
       </div>
 
       {/* Active Agents Table */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-6">
-        <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#11141A] border border-white/[0.08] card-interactive space-y-6">
+        <h3 className="text-sm font-bold text-[#F3F4F6] uppercase tracking-wider">
           Monetized Agent Endpoints
         </h3>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-mono text-[11px]">
+              <tr className="border-b border-white/[0.08] text-[#9CA3AF] font-mono text-[11px]">
                 <th className="pb-3 font-semibold">Agent Name</th>
                 <th className="pb-3 font-semibold">Category</th>
                 <th className="pb-3 font-semibold">Price/Call</th>
@@ -151,11 +151,11 @@ export const DeveloperDashboardPage: React.FC<DeveloperDashboardPageProps> = ({ 
                 <th className="pb-3 font-semibold text-right">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-white/[0.04]">
               {(analytics?.agents || []).map((a: any) => (
-                <tr key={a.id} className="hover:bg-slate-900/40">
-                  <td className="py-3 font-bold text-white">{a.name}</td>
-                  <td className="py-3 font-mono text-slate-400">{a.category}</td>
+                <tr key={a.id} className="hover:bg-[#171A22]/50 transition-colors">
+                  <td className="py-3 font-bold text-[#F3F4F6]">{a.name}</td>
+                  <td className="py-3 font-mono text-[#9CA3AF]">{a.category}</td>
                   <td className="py-3 font-mono text-emerald-400">{a.price_usdc.toFixed(2)} USDC</td>
                   <td className="py-3 font-mono text-slate-300">{a.metrics?.total_calls || 0}</td>
                   <td className="py-3 font-mono text-amber-400">
@@ -177,28 +177,28 @@ export const DeveloperDashboardPage: React.FC<DeveloperDashboardPageProps> = ({ 
       </div>
 
       {/* Submissions History */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-4">
-        <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#11141A] border border-white/[0.08] card-interactive space-y-4">
+        <h3 className="text-sm font-bold text-[#F3F4F6] uppercase tracking-wider">
           Recent Agent Submissions & Review Feedback
         </h3>
 
         {submissions.length === 0 ? (
-          <p className="text-xs text-slate-400">No pending or recent submissions. Click "Submit New Agent" to propose an endpoint.</p>
+          <p className="text-xs text-[#9CA3AF]">No pending or recent submissions. Click "Submit New Agent" to propose an endpoint.</p>
         ) : (
           <div className="space-y-3">
             {submissions.map((sub: any) => (
               <div
                 key={sub.id}
-                className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                className="p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-white">{sub.name}</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                    <span className="font-bold text-[#F3F4F6]">{sub.name}</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#171A22] text-[#9CA3AF] border border-white/[0.06]">
                       {sub.category}
                     </span>
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-1 truncate max-w-md">
+                  <div className="text-[11px] text-[#9CA3AF] mt-1 truncate max-w-md">
                     {sub.endpoint_url}
                   </div>
                   {sub.rejection_reason && (

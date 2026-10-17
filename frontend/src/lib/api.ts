@@ -122,7 +122,7 @@ export const api = {
     return res.json();
   },
 
-  async createTask(payload: { description: string; budgetLimit: number; userId?: string; title?: string }) {
+  async createTask(payload: { description: string; budgetLimit: number; userId?: string; title?: string; plan?: any }) {
     const res = await fetch(`${API_BASE}/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

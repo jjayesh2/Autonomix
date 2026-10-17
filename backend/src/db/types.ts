@@ -107,9 +107,10 @@ export interface Transaction {
   amount_usdc: number;
   platform_fee_usdc: number;
   tx_hash?: string;
+  voucher_digest?: string;
   explorer_url?: string;
   payment_status: PaymentStatus;
-  service_status: 'pending' | 'success' | 'failed' | 'output_rejected';
+  service_status: 'pending' | 'success' | 'failed' | 'output_rejected' | 'empty_result';
   idempotency_key: string;
   nonce?: string;
   created_at: string;

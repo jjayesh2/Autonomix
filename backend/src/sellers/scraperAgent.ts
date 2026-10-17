@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import dns from 'node:dns/promises';
 import { x402Engine } from '../payments/x402Protocol.js';
+import { parseProductSearchIntent } from '../utils/productSearchParser.js';
 
 export const SCRAPER_AGENT_CONFIG = {
   id: 'a0000000-0000-0000-0000-000000000002',
@@ -9,6 +11,36 @@ export const SCRAPER_AGENT_CONFIG = {
   priceUsdc: 0.03,
   recipient: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
 };
+
+/**
+ * Checks if an IP address belongs to private/loopback/cloud-metadata ranges.
+ */
+export function isPrivateOrBlockedIp(ip: string): boolean {
+  if (!ip) return true;
+  const trimmed = ip.trim().toLowerCase();
+  if (trimmed === '127.0.0.1' || trimmed === '0.0.0.0' || trimmed === '::1' || trimmed === 'localhost') return true;
+  if (trimmed === '169.254.169.254' || trimmed === '169.254.169.123') return true;
+
+  // IPv4 CIDR checks:
+  const match = trimmed.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (match) {
+    const o1 = parseInt(match[1], 10);
+    const o2 = parseInt(match[2], 10);
+    if (o1 === 10) return true; // 10.0.0.0/8
+    if (o1 === 127) return true; // 127.0.0.0/8
+    if (o1 === 172 && o2 >= 16 && o2 <= 31) return true; // 172.16.0.0/12
+    if (o1 === 192 && o2 === 168) return true; // 192.168.0.0/16
+    if (o1 === 169 && o2 === 254) return true; // 169.254.0.0/16
+    if (o1 === 0) return true;
+  }
+
+  // IPv6 private/link-local:
+  if (trimmed.startsWith('fe80:') || trimmed.startsWith('fc00:') || trimmed.startsWith('fd00:')) {
+    return true;
+  }
+
+  return false;
+}
 
 /**
  * Strict SSRF Validation: Blocks private IP ranges, link-local addresses,
@@ -45,17 +77,9 @@ export function isSsrfSafeUrl(rawUrl: string): { isSafe: boolean; reason?: strin
       return { isSafe: false, reason: 'Access to cloud metadata services is strictly blocked.' };
     }
 
-    // IPv4 CIDR blocks: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16
-    const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
-    const match = hostname.match(ipv4Regex);
-    if (match) {
-      const octet1 = parseInt(match[1], 10);
-      const octet2 = parseInt(match[2], 10);
-
-      if (octet1 === 10) return { isSafe: false, reason: 'Private network block 10.0.0.0/8 is prohibited.' };
-      if (octet1 === 172 && octet2 >= 16 && octet2 <= 31) return { isSafe: false, reason: 'Private network block 172.16.0.0/12 is prohibited.' };
-      if (octet1 === 192 && octet2 === 168) return { isSafe: false, reason: 'Private network block 192.168.0.0/16 is prohibited.' };
-      if (octet1 === 169 && octet2 === 254) return { isSafe: false, reason: 'Link-local / cloud metadata block 169.254.0.0/16 is prohibited.' };
+    // Check if hostname is directly an IP
+    if (isPrivateOrBlockedIp(hostname)) {
+      return { isSafe: false, reason: 'Direct access to private or loopback IP addresses is prohibited.' };
     }
 
     return { isSafe: true };
@@ -148,6 +172,7 @@ export async function handleScraperAgentService(req: Request, res: Response): Pr
     let extractedItems: any[] = [];
 
     if (explicitUrl) {
+      // Step A: Static syntax & pattern SSRF check
       const ssrfCheck = isSsrfSafeUrl(explicitUrl);
       if (!ssrfCheck.isSafe) {
         res.status(400).json({
@@ -158,13 +183,42 @@ export async function handleScraperAgentService(req: Request, res: Response): Pr
         return;
       }
 
+      const parsed = new URL(explicitUrl);
+
+      // Step B: Live DNS Resolution & DNS Rebinding Protection
+      try {
+        const lookupResults = await dns.lookup(parsed.hostname, { all: true });
+        for (const record of lookupResults) {
+          if (isPrivateOrBlockedIp(record.address)) {
+            res.status(400).json({
+              error: 'SSRF Protection Violation',
+              message: `Resolved IP address ${record.address} for host ${parsed.hostname} is a restricted private/loopback address.`,
+              url: explicitUrl,
+            });
+            return;
+          }
+        }
+      } catch (dnsErr: any) {
+        // Clear upstream DNS resolution error — strictly DO NOT fabricate data or charge
+        console.error(`[Scraper Agent] Hostname resolution failed for ${parsed.hostname}:`, dnsErr.code || dnsErr.message);
+        res.status(502).json({
+          error: 'Hostname Resolution Failed',
+          message: `Cannot resolve host '${parsed.hostname}' (${dnsErr.code || 'ENOTFOUND'}). The target domain does not exist or DNS lookup failed.`,
+          hostname: parsed.hostname,
+          url: explicitUrl,
+          status: 'dns_failure',
+        });
+        return;
+      }
+
       targetUrl = explicitUrl;
       const pageRes = await axios.get(targetUrl, {
         headers: {
           'User-Agent': 'Autonomix-Agent-Scraper/1.0 (+https://autonomix.network)',
           Accept: 'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8',
         },
-        timeout: 9000,
+        timeout: 10000,
+        maxContentLength: 5 * 1024 * 1024, // 5 MB response size limit
         maxRedirects: 3,
       });
 
@@ -220,11 +274,11 @@ export async function handleScraperAgentService(req: Request, res: Response): Pr
         const links = $('a[href]')
           .map((_, el) => $(el).attr('href'))
           .get()
-          .filter((href) => href && !href.startsWith('#') && !href.startsWith('javascript:'))
-          .slice(0, 10);
+          .filter((href) => href && href.startsWith('http'))
+          .slice(0, 5);
 
         extractedItems.push({
-          id: 'scraped_page_1',
+          id: `item_0_${Date.now()}`,
           title,
           description: description.slice(0, 400),
           headings,
@@ -236,15 +290,60 @@ export async function handleScraperAgentService(req: Request, res: Response): Pr
       }
     } else {
       // Query permitted live open product repository and parse actual item details
-      targetUrl = `https://dummyjson.com/products/search?q=${encodeURIComponent(target)}`;
-      const searchRes = await axios.get(targetUrl, {
-        headers: { 'User-Agent': 'Autonomix-Agent-Scraper/1.0 (+https://autonomix.network)' },
-        timeout: 8000,
+      const intent = parseProductSearchIntent(target, req.body);
+      let rawProducts: any[] = [];
+      targetUrl = `https://dummyjson.com/products/search?q=${encodeURIComponent(intent.cleanKeyword)}`;
+
+      if (intent.targetCategories && intent.targetCategories.length > 0) {
+        for (const cat of intent.targetCategories.slice(0, 2)) {
+          const catUrl = `https://dummyjson.com/products/category/${encodeURIComponent(cat)}`;
+          try {
+            const catRes = await axios.get(catUrl, {
+              headers: { 'User-Agent': 'Autonomix-Agent-Scraper/1.0 (+https://autonomix.network)' },
+              timeout: 10000,
+              maxContentLength: 5 * 1024 * 1024,
+            });
+            if (Array.isArray(catRes.data?.products)) {
+              rawProducts.push(...catRes.data.products);
+              targetUrl = catUrl;
+            }
+          } catch {}
+        }
+      }
+
+      if (rawProducts.length < 5 && intent.cleanKeyword) {
+        try {
+          const searchRes = await axios.get(`https://dummyjson.com/products/search?q=${encodeURIComponent(intent.cleanKeyword)}`, {
+            headers: { 'User-Agent': 'Autonomix-Agent-Scraper/1.0 (+https://autonomix.network)' },
+            timeout: 10000,
+            maxContentLength: 5 * 1024 * 1024,
+          });
+          if (Array.isArray(searchRes.data?.products)) {
+            rawProducts.push(...searchRes.data.products);
+          }
+        } catch {}
+      }
+
+      // Deduplicate by ID
+      const seenIds = new Set<number>();
+      const dedupedProducts: any[] = [];
+      for (const p of rawProducts) {
+        if (p && p.id && !seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          dedupedProducts.push(p);
+        }
+      }
+
+      // Filter by relevance & price
+      const filtered = dedupedProducts.filter((p) => {
+        if (intent.maxPrice !== undefined && p.price > intent.maxPrice) return false;
+        if (intent.targetCategories.length > 0 && intent.targetCategories.includes(p.category)) return true;
+        const titleLower = String(p.title || '').toLowerCase();
+        const root = intent.cleanKeyword.toLowerCase().replace(/s$/, '');
+        return titleLower.includes(root);
       });
 
-      const rawProducts = searchRes.data.products || [];
-
-      if (rawProducts.length === 0) {
+      if (filtered.length === 0) {
         // Honest empty result reporting — zero fake items injected
         const emptyOutput = {
           url: targetUrl,
@@ -253,7 +352,7 @@ export async function handleScraperAgentService(req: Request, res: Response): Pr
           scraped_at: timestamp,
           parser: 'Cheerio HTML & HTTP Live Extractor',
           extraction_status: 'empty',
-          message: `No live catalog items found matching "${target}".`,
+          message: `No live catalog items found matching "${target}" (intent: ${intent.cleanKeyword}${intent.maxPrice ? `, price <= ${intent.maxPrice}` : ''}).`,
           paymentReceipt: {
             protocol: 'x402 v2',
             txHash: verification.txHash,
@@ -271,7 +370,7 @@ export async function handleScraperAgentService(req: Request, res: Response): Pr
         return;
       }
 
-      for (const p of rawProducts.slice(0, 5)) {
+      for (const p of filtered.slice(0, 5)) {
         extractedItems.push({
           id: `prod_${p.id}`,
           title: p.title,

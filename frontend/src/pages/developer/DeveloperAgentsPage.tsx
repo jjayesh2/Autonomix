@@ -79,12 +79,12 @@ export const DeveloperAgentsPage: React.FC<{ onNavigate: (screen: string) => voi
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-mono mb-2 border border-indigo-500/20">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 text-[#819BFF] text-xs font-mono mb-2 border border-indigo-500/20">
             <Server className="w-3.5 h-3.5" />
             <span>Hosted Agent Endpoints</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">My Agents</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-3xl font-extrabold text-[#F3F4F6] tracking-tight">My Agents</h1>
+          <p className="text-xs text-[#9CA3AF] mt-1">
             Manage your service agents, run health check diagnostics, and monitor real-time approval status.
           </p>
         </div>
@@ -94,7 +94,7 @@ export const DeveloperAgentsPage: React.FC<{ onNavigate: (screen: string) => voi
             playClick();
             onNavigate('submit_agent');
           }}
-          className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-glow-accent transition-all flex items-center gap-2"
+          className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-[#819BFF] hover:opacity-95 text-[#F3F4F6] font-semibold text-xs shadow-glow-blue transition-all flex items-center gap-2"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Submit New Agent</span>
@@ -103,15 +103,15 @@ export const DeveloperAgentsPage: React.FC<{ onNavigate: (screen: string) => voi
 
       {/* Agents List */}
       {loading ? (
-        <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-3">
-          <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+        <div className="p-12 text-center text-[#9CA3AF] flex flex-col items-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin text-[#819BFF]" />
           <span className="text-xs">Loading developer agent inventory...</span>
         </div>
       ) : agents.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-[#0F1626] border border-slate-800 text-center space-y-4">
+        <div className="p-12 rounded-3xl bg-[#11141A] border border-white/[0.08] text-center space-y-4">
           <Server className="w-10 h-10 text-slate-600 mx-auto" />
-          <h3 className="text-base font-bold text-white">No agents deployed yet</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+          <h3 className="text-base font-bold text-[#F3F4F6]">No agents deployed yet</h3>
+          <p className="text-xs text-[#9CA3AF] max-w-sm mx-auto">
             Submit your first AI service endpoint to start earning USDC micropayments via x402 v2 protocol.
           </p>
           <button
@@ -119,7 +119,7 @@ export const DeveloperAgentsPage: React.FC<{ onNavigate: (screen: string) => voi
               playClick();
               onNavigate('submit_agent');
             }}
-            className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-[#819BFF] text-[#F3F4F6] text-xs font-semibold"
           >
             Submit an Agent
           </button>
@@ -133,13 +133,13 @@ export const DeveloperAgentsPage: React.FC<{ onNavigate: (screen: string) => voi
             return (
               <div
                 key={agent.id}
-                className="p-6 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-4 hover:border-slate-700 transition-all"
+                className="p-6 rounded-3xl bg-[#11141A] border border-white/[0.08] card-interactive space-y-4 transition-all"
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2.5">
-                      <h3 className="text-lg font-bold text-white">{agent.name}</h3>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-slate-800 text-slate-300">
+                      <h3 className="text-lg font-bold text-[#F3F4F6]">{agent.name}</h3>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-[#171A22] text-[#9CA3AF] border border-white/[0.06]">
                         {agent.category}
                       </span>
                       <span
@@ -156,14 +156,14 @@ export const DeveloperAgentsPage: React.FC<{ onNavigate: (screen: string) => voi
                         {agent.status}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1 max-w-2xl">{agent.description}</p>
+                    <p className="text-xs text-[#9CA3AF] mt-1 max-w-2xl">{agent.description}</p>
                   </div>
 
                   <div className="flex items-center gap-2 self-start sm:self-auto">
                     <button
                       onClick={() => handleTestEndpoint(agent)}
                       disabled={isTesting}
-                      className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-cyan-500/50 text-slate-200 text-xs font-mono flex items-center gap-1.5 transition-all disabled:opacity-50"
+                      className="px-3 py-1.5 rounded-xl bg-[#0D0F14] border border-white/[0.08] hover:border-cyan-500/50 text-[#F3F4F6] text-xs font-mono flex items-center gap-1.5 transition-all disabled:opacity-50"
                     >
                       {isTesting ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
@@ -177,7 +177,7 @@ export const DeveloperAgentsPage: React.FC<{ onNavigate: (screen: string) => voi
                         playClick();
                         onNavigate('developer_executions');
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 hover:bg-indigo-600/30 text-indigo-300 text-xs font-mono flex items-center gap-1.5 transition-all"
+                      className="px-3 py-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 hover:bg-indigo-600/30 text-[#819BFF] text-xs font-mono flex items-center gap-1.5 transition-all"
                     >
                       <Activity className="w-3.5 h-3.5" />
                       <span>Traces</span>
@@ -203,16 +203,16 @@ export const DeveloperAgentsPage: React.FC<{ onNavigate: (screen: string) => voi
                       <span>{currentTest.message}</span>
                     </div>
                     {currentTest.latencyMs && (
-                      <span className="text-slate-400 text-[10px]">~{currentTest.latencyMs}ms</span>
+                      <span className="text-[#9CA3AF] text-[10px]">~{currentTest.latencyMs}ms</span>
                     )}
                   </div>
                 )}
 
                 {/* Details Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-800 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-white/[0.08] text-xs">
                   <div>
                     <span className="text-slate-500 text-[11px] block">Endpoint URL:</span>
-                    <span className="font-mono text-slate-300 text-[11px] truncate block mt-0.5">
+                    <span className="font-mono text-[#F3F4F6] text-[11px] truncate block mt-0.5">
                       {agent.endpoint_url}
                     </span>
                   </div>
@@ -241,7 +241,7 @@ export const DeveloperAgentsPage: React.FC<{ onNavigate: (screen: string) => voi
                     {agent.capabilities.map((cap, i) => (
                       <span
                         key={i}
-                        className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-[10px] text-slate-400 font-mono"
+                        className="px-2 py-0.5 rounded-md bg-[#0D0F14] border border-white/[0.08] text-[10px] text-[#9CA3AF] font-mono"
                       >
                         {cap}
                       </span>

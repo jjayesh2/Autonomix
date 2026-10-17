@@ -55,12 +55,12 @@ export const CustomerTasksPage: React.FC<CustomerTasksPageProps> = ({ onNavigate
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight">My Autonomous Tasks</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[#9CA3AF] mt-1">
             Review past executions, live task states, itemized payments, and output schemas.
           </p>
         </div>
@@ -68,17 +68,17 @@ export const CustomerTasksPage: React.FC<CustomerTasksPageProps> = ({ onNavigate
         <div className="flex items-center gap-2">
           <button
             onClick={loadTasks}
-            className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors"
+            className="p-2.5 rounded-xl bg-[#0D0F14] hover:bg-[#171A22] text-[#9CA3AF] hover:text-white border border-white/[0.08] transition-colors"
             title="Refresh"
           >
-            <RefreshCw className="w-4 h-4 text-cyan-400" />
+            <RefreshCw className="w-4 h-4 text-[#819BFF]" />
           </button>
           <button
             onClick={() => {
               playClick();
               onNavigate('create_task');
             }}
-            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-glow-accent transition-all flex items-center gap-2"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-[#819BFF] hover:from-indigo-500 hover:to-[#819BFF] text-white font-semibold text-xs shadow-glow-accent transition-all flex items-center gap-2"
           >
             <PlusCircle className="w-4 h-4" />
             <span>New Task</span>
@@ -87,15 +87,15 @@ export const CustomerTasksPage: React.FC<CustomerTasksPageProps> = ({ onNavigate
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="p-4 rounded-2xl bg-[#0F1626] border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="p-4 rounded-2xl bg-[#11141A] border border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+          <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-3" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tasks..."
-            className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className="w-full bg-[#0D0F14] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2 text-xs text-[#F3F4F6] placeholder-[#9CA3AF]/60 focus:outline-none focus:border-[#819BFF]/60 transition-colors"
           />
         </div>
 
@@ -109,8 +109,8 @@ export const CustomerTasksPage: React.FC<CustomerTasksPageProps> = ({ onNavigate
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium uppercase font-mono transition-colors shrink-0 ${
                 filterStatus === st
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                  ? 'bg-[#171A22] border border-[#819BFF]/60 text-white font-semibold'
+                  : 'bg-[#0D0F14] text-[#9CA3AF] hover:text-white border border-white/[0.08]'
               }`}
             >
               {st}
@@ -120,13 +120,13 @@ export const CustomerTasksPage: React.FC<CustomerTasksPageProps> = ({ onNavigate
       </div>
 
       {/* Task List Table */}
-      <div className="p-6 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-4">
+      <div className="p-6 rounded-3xl bg-[#11141A] border border-white/[0.08] space-y-4 shadow-card-elevated">
         {loading ? (
-          <div className="py-16 text-center text-slate-500 text-xs">Loading tasks...</div>
+          <div className="py-16 text-center text-[#9CA3AF] text-xs">Loading tasks...</div>
         ) : filteredTasks.length === 0 ? (
           <div className="text-center py-16 space-y-3">
-            <ListTodo className="w-10 h-10 text-slate-600 mx-auto" />
-            <p className="text-xs text-slate-400">No tasks found matching your filter.</p>
+            <ListTodo className="w-10 h-10 text-[#9CA3AF] mx-auto" />
+            <p className="text-xs text-[#9CA3AF]">No tasks found matching your filter.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -142,11 +142,11 @@ export const CustomerTasksPage: React.FC<CustomerTasksPageProps> = ({ onNavigate
                     onNavigate('live_execution');
                   }
                 }}
-                className="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+                className="p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] hover:border-white/[0.16] card-interactive cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
               >
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-white text-xs truncate max-w-lg group-hover:text-indigo-300 transition-colors">
+                    <span className="font-bold text-white text-xs truncate max-w-lg group-hover:text-[#819BFF] transition-colors">
                       {task.description}
                     </span>
                     <span
@@ -161,7 +161,7 @@ export const CustomerTasksPage: React.FC<CustomerTasksPageProps> = ({ onNavigate
                       {task.status}
                     </span>
                   </div>
-                  <div className="text-[11px] text-slate-500 font-mono flex items-center gap-3">
+                  <div className="text-[11px] text-[#9CA3AF] font-mono flex items-center gap-3">
                     <span>Started: {new Date(task.created_at).toLocaleString()}</span>
                     <span>•</span>
                     <span>Budget Cap: {task.budget_limit.toFixed(2)} USDC</span>
@@ -175,7 +175,7 @@ export const CustomerTasksPage: React.FC<CustomerTasksPageProps> = ({ onNavigate
                     </div>
                     <div className="text-[10px] text-slate-500 font-mono">Actual Spent</div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-indigo-400 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#819BFF] transition-colors" />
                 </div>
               </div>
             ))}
