@@ -179,7 +179,7 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -188,14 +188,14 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
             <span>Autonomous Spending Account & Settlement</span>
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Wallet & Billing</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[#9CA3AF] mt-1">
             Manage your autonomous agent balance, inspect x402 payment escrows, and fund your wallet using testnet USDC or fiat rails.
           </p>
         </div>
 
         <button
           onClick={handleOpenAddFunds}
-          className="self-start sm:self-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold text-xs shadow-glow-accent transition-all flex items-center gap-2"
+          className="self-start sm:self-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-[#819BFF] hover:from-indigo-500 hover:to-[#819BFF] text-white font-bold text-xs shadow-glow-accent transition-all flex items-center gap-2 transform hover:-translate-y-0.5"
         >
           <CreditCard className="w-4 h-4" />
           <span>Add Funds (UPI / Card / Net Banking)</span>
@@ -205,9 +205,9 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
       {/* Balance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Main Available Balance */}
-        <div className="p-6 rounded-3xl bg-[#0F1626] border border-indigo-500/30 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-3">
+        <div className="p-6 rounded-3xl bg-[#11141A] border border-white/[0.08] shadow-card-elevated relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#819BFF]/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="flex items-center justify-between text-[#9CA3AF] text-xs mb-3">
             <span className="font-semibold uppercase tracking-wider text-[11px]">Available Spending Balance</span>
             <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono text-[10px] border border-emerald-500/20">
               Ready for Agent Calls
@@ -215,18 +215,18 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-white font-mono tracking-tight">{balance.toFixed(2)}</span>
-            <span className="text-sm font-bold text-indigo-400 font-mono">USDC</span>
+            <span className="text-sm font-bold text-[#819BFF] font-mono">USDC</span>
           </div>
-          <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-400">
+          <div className="mt-3 flex items-center gap-2 text-[11px] text-[#9CA3AF]">
             <span>≈ ₹{(balance * exchangeRate).toFixed(0)} INR</span>
             <span>•</span>
-            <span className="text-cyan-400 font-mono">Base Sepolia Testnet</span>
+            <span className="text-[#819BFF] font-mono">Base Sepolia Testnet</span>
           </div>
         </div>
 
         {/* Reserved / In Escrow */}
-        <div className="p-6 rounded-3xl bg-[#0F1626] border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-3">
+        <div className="p-6 rounded-3xl bg-[#11141A] border border-white/[0.08] shadow-card-elevated">
+          <div className="flex items-center justify-between text-[#9CA3AF] text-xs mb-3">
             <span className="font-semibold uppercase tracking-wider text-[11px]">Atomic Budget Reservation</span>
             <Clock className="w-3.5 h-3.5 text-amber-400" />
           </div>
@@ -234,14 +234,14 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
             <span className="text-4xl font-extrabold text-amber-400 font-mono tracking-tight">{reservedBudget.toFixed(2)}</span>
             <span className="text-sm font-bold text-amber-400/80 font-mono">USDC</span>
           </div>
-          <div className="mt-3 text-[11px] text-slate-400">
+          <div className="mt-3 text-[11px] text-[#9CA3AF]">
             Locked during active orchestration pipelines to prevent overspending.
           </div>
         </div>
 
         {/* Network & Protocol Card */}
-        <div className="p-6 rounded-3xl bg-[#0F1626] border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
+        <div className="p-6 rounded-3xl bg-[#11141A] border border-white/[0.08] shadow-card-elevated">
+          <div className="flex items-center justify-between text-[#9CA3AF] text-xs mb-2">
             <span className="font-semibold uppercase tracking-wider text-[11px]">x402 Protocol Settlement</span>
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
           </div>
@@ -256,7 +256,7 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                 href="https://sepolia.basescan.org/token/0x036CbD53842c5426634e7929541eC2318f3dCF7e"
                 target="_blank"
                 rel="noreferrer"
-                className="text-indigo-400 hover:underline flex items-center gap-1"
+                className="text-[#819BFF] hover:underline flex items-center gap-1"
               >
                 0x036Cb...dCF7e <ExternalLink className="w-3 h-3" />
               </a>
@@ -270,35 +270,35 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
       </div>
 
       {/* Architectural Separation Notice */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-indigo-950/30 border border-indigo-500/20 text-xs text-slate-300 space-y-2">
-        <div className="flex items-center gap-2 text-indigo-300 font-bold">
-          <Info className="w-4 h-4 shrink-0 text-cyan-400" />
+      <div className="p-4 sm:p-5 rounded-2xl bg-[#0D0F14] border border-white/[0.08] text-xs text-[#9CA3AF] space-y-2">
+        <div className="flex items-center gap-2 text-[#819BFF] font-bold">
+          <Info className="w-4 h-4 shrink-0 text-[#819BFF]" />
           <span>Architectural Separation: Fiat Rails vs. Autonomous Agent Micro-Settlement</span>
         </div>
-        <p className="text-[11px] text-slate-400 leading-relaxed">
+        <p className="text-[11px] text-[#9CA3AF] leading-relaxed">
           Traditional fiat mechanisms like <strong>UPI, Debit Cards, and Net Banking</strong> operate on centralized clearing houses with high fixed transaction fees ($0.30+), settlement batch delays, and human 2FA friction. They cannot directly execute sub-cent autonomous machine-to-machine micropayments. Autonomix bridges this: human customers top up via standard fiat rails, and the backend instantly allocates cryptographic <strong>x402 testnet USDC tokens on Base Sepolia</strong> to the Buyer Agent's session-isolated spending wallet for instantaneous, verifiable HTTP 402 execution.
         </p>
       </div>
 
       {/* Transaction History */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#11141A] border border-white/[0.08] shadow-card-elevated space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-base font-bold text-white tracking-tight">Ledger & Micropayment History</h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-[#9CA3AF] mt-0.5">
               Itemized trace of deposits, task authorizations, and x402 settlement signatures.
             </p>
           </div>
           <span className="text-xs font-mono text-slate-500">{transactions.length} records</span>
         </div>
 
-        <div className="divide-y divide-slate-800/80 overflow-x-auto">
+        <div className="divide-y divide-white/[0.04] overflow-x-auto">
           {transactions.map((tx) => (
-            <div key={tx.id} className="py-4 flex items-center justify-between gap-4">
+            <div key={tx.id} className="py-4 flex items-center justify-between gap-4 hover:bg-[#171A22]/50 px-2 rounded-xl transition-colors">
               <div className="flex items-center gap-3">
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    tx.amount > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'
+                    tx.amount > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-[#819BFF]/10 text-[#819BFF]'
                   }`}
                 >
                   {tx.amount > 0 ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
@@ -308,7 +308,7 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                   <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono mt-0.5">
                     <span>{new Date(tx.created_at).toLocaleString()}</span>
                     <span>•</span>
-                    <span className="text-slate-400">{tx.method || 'Protocol'}</span>
+                    <span className="text-[#9CA3AF]">{tx.method || 'Protocol'}</span>
                     {tx.tx_hash && (
                       <>
                         <span>•</span>
@@ -316,7 +316,7 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                           href={`https://sepolia.basescan.org/tx/${tx.tx_hash}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-cyan-400 hover:underline inline-flex items-center gap-0.5"
+                          className="text-[#819BFF] hover:underline inline-flex items-center gap-0.5"
                         >
                           Tx: {tx.tx_hash.slice(0, 10)}... <ExternalLink className="w-2.5 h-2.5" />
                         </a>
@@ -329,7 +329,7 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
               <div className="text-right shrink-0">
                 <span
                   className={`text-sm font-mono font-bold block ${
-                    tx.amount > 0 ? 'text-emerald-400' : 'text-slate-200'
+                    tx.amount > 0 ? 'text-emerald-400' : 'text-[#F3F4F6]'
                   }`}
                 >
                   {tx.amount > 0 ? `+${tx.amount.toFixed(2)}` : tx.amount.toFixed(2)} USDC
@@ -345,14 +345,14 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
 
       {/* ADD FUNDS MODAL */}
       {isAddFundsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="relative w-full max-w-lg rounded-3xl bg-[#0F1626] border border-indigo-500/30 p-6 sm:p-8 space-y-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto animate-fade-in">
+          <div className="relative w-full max-w-lg rounded-3xl bg-[#11141A] border border-white/[0.08] p-6 sm:p-8 space-y-6 shadow-card-elevated">
             <button
               onClick={() => {
                 playClick();
                 setIsAddFundsOpen(false);
               }}
-              className="absolute top-6 right-6 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="absolute top-6 right-6 p-1.5 rounded-lg text-[#9CA3AF] hover:text-white hover:bg-[#171A22] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -363,17 +363,17 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-bold text-white">Funds Successfully Credited!</h3>
-                <p className="text-xs text-slate-300 max-w-sm mx-auto">
+                <p className="text-xs text-[#9CA3AF] max-w-sm mx-auto">
                   Your autonomous buyer balance has been credited with <strong>+{netCreditUsdc} USDC</strong> on Base Sepolia. Your buyer agent is ready to execute tasks with strict x402 budget enforcement.
                 </p>
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 font-mono text-xs text-slate-400 text-left space-y-1">
+                <div className="p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] font-mono text-xs text-[#9CA3AF] text-left space-y-1">
                   <div className="flex justify-between">
                     <span>Payment Method:</span>
                     <span className="text-white uppercase">{selectedMethod}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Settlement Network:</span>
-                    <span className="text-cyan-400">Base Sepolia Testnet</span>
+                    <span className="text-[#819BFF]">Base Sepolia Testnet</span>
                   </div>
                   <div className="flex justify-between">
                     <span>New Balance:</span>
@@ -382,7 +382,7 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                 </div>
                 <button
                   onClick={() => setIsAddFundsOpen(false)}
-                  className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs"
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-[#819BFF] hover:from-indigo-500 hover:to-[#819BFF] text-white font-bold text-xs shadow-glow-accent transition-all"
                 >
                   Done & Return to Wallet
                 </button>
@@ -390,12 +390,12 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
             ) : (
               <form onSubmit={handleExecuteAddFunds} className="space-y-6">
                 <div>
-                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 text-[10px] font-mono border border-indigo-500/20 mb-1">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#819BFF]/10 text-[#819BFF] text-[10px] font-mono border border-[#819BFF]/20 mb-1">
                     <Sparkles className="w-3 h-3" />
                     <span>Instant Autonomous Top-Up</span>
                   </div>
                   <h3 className="text-xl font-bold text-white">Add Funds to Agent Wallet</h3>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-[#9CA3AF] mt-1">
                     Select your preferred fiat rail. Funds are seamlessly converted to testnet USDC for x402 execution.
                   </p>
                 </div>
@@ -410,7 +410,7 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                 {/* Amount Selection */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-slate-300">Select Funding Amount</label>
+                    <label className="text-xs font-semibold text-[#F3F4F6]">Select Funding Amount</label>
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -419,7 +419,7 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                           setDepositAmount(10);
                         }}
                         className={`px-2 py-0.5 rounded text-[10px] font-mono ${
-                          fiatCurrency === 'USD' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'
+                          fiatCurrency === 'USD' ? 'bg-[#819BFF] text-white font-bold' : 'bg-[#0D0F14] border border-white/[0.08] text-[#9CA3AF]'
                         }`}
                       >
                         USD ($)
@@ -431,7 +431,7 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                           setDepositAmount(1000);
                         }}
                         className={`px-2 py-0.5 rounded text-[10px] font-mono ${
-                          fiatCurrency === 'INR' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'
+                          fiatCurrency === 'INR' ? 'bg-[#819BFF] text-white font-bold' : 'bg-[#0D0F14] border border-white/[0.08] text-[#9CA3AF]'
                         }`}
                       >
                         INR (₹)
@@ -448,8 +448,8 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                         onClick={() => setDepositAmount(amt)}
                         className={`py-2 rounded-xl text-xs font-mono font-bold transition-all border ${
                           depositAmount === amt
-                            ? 'bg-indigo-600 border-indigo-400 text-white'
-                            : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                            ? 'bg-[#171A22] border-[#819BFF] text-white shadow-sm'
+                            : 'bg-[#0D0F14] border-white/[0.08] text-[#9CA3AF] hover:border-white/[0.16]'
                         }`}
                       >
                         {fiatCurrency === 'USD' ? `$${amt}` : `₹${amt}`}
@@ -457,7 +457,7 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                     ))}
                   </div>
 
-                  <div className="text-[11px] text-slate-400 font-mono flex items-center justify-between px-1">
+                  <div className="text-[11px] text-[#9CA3AF] font-mono flex items-center justify-between px-1">
                     <span>Receiving ≈ <strong className="text-emerald-400 font-bold">{netCreditUsdc} USDC</strong></span>
                     <span>(1 USD ≈ ₹{exchangeRate})</span>
                   </div>
@@ -465,15 +465,15 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
 
                 {/* Method Tabs */}
                 <div className="space-y-3">
-                  <label className="text-xs font-semibold text-slate-300">Choose Payment Method</label>
+                  <label className="text-xs font-semibold text-[#F3F4F6]">Choose Payment Method</label>
                   <div className="grid grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => setSelectedMethod('upi')}
                       className={`p-3 rounded-2xl flex flex-col items-center gap-1.5 border text-center transition-all ${
                         selectedMethod === 'upi'
-                          ? 'bg-indigo-600/10 border-indigo-500 text-white'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                          ? 'bg-[#171A22] border-[#819BFF] text-white shadow-sm'
+                          : 'bg-[#0D0F14] border-white/[0.08] text-[#9CA3AF] hover:border-white/[0.16]'
                       }`}
                     >
                       <QrCode className="w-5 h-5 text-cyan-400" />
@@ -486,11 +486,11 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                       onClick={() => setSelectedMethod('card')}
                       className={`p-3 rounded-2xl flex flex-col items-center gap-1.5 border text-center transition-all ${
                         selectedMethod === 'card'
-                          ? 'bg-indigo-600/10 border-indigo-500 text-white'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                          ? 'bg-[#171A22] border-[#819BFF] text-white shadow-sm'
+                          : 'bg-[#0D0F14] border-white/[0.08] text-[#9CA3AF] hover:border-white/[0.16]'
                       }`}
                     >
-                      <CreditCard className="w-5 h-5 text-indigo-400" />
+                      <CreditCard className="w-5 h-5 text-[#819BFF]" />
                       <span className="text-xs font-bold">Cards</span>
                       <span className="text-[9px] text-slate-500">Visa, MC, RuPay</span>
                     </button>
@@ -500,8 +500,8 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                       onClick={() => setSelectedMethod('netbanking')}
                       className={`p-3 rounded-2xl flex flex-col items-center gap-1.5 border text-center transition-all ${
                         selectedMethod === 'netbanking'
-                          ? 'bg-indigo-600/10 border-indigo-500 text-white'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                          ? 'bg-[#171A22] border-[#819BFF] text-white shadow-sm'
+                          : 'bg-[#0D0F14] border-white/[0.08] text-[#9CA3AF] hover:border-white/[0.16]'
                       }`}
                     >
                       <Building className="w-5 h-5 text-amber-400" />
@@ -513,17 +513,17 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
 
                 {/* Method Specific Fields */}
                 {selectedMethod === 'upi' && (
-                  <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
-                    <label className="text-xs font-semibold text-slate-300 block">UPI ID / Virtual Payment Address</label>
+                  <div className="p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] space-y-3">
+                    <label className="text-xs font-semibold text-[#F3F4F6] block">UPI ID / Virtual Payment Address</label>
                     <input
                       type="text"
                       value={upiId}
                       onChange={(e) => setUpiId(e.target.value)}
                       placeholder="username@bank"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C14] border border-slate-800 text-white text-xs font-mono focus:outline-none focus:border-indigo-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#08090C] border border-white/[0.08] text-white text-xs font-mono focus:outline-none focus:border-[#819BFF]/60 transition-colors"
                       required
                     />
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                    <div className="flex items-center gap-2 text-[11px] text-[#9CA3AF]">
                       <span className="w-2 h-2 rounded-full bg-emerald-400" />
                       <span>Instant collect request will be sent to your UPI app.</span>
                     </div>
@@ -531,39 +531,39 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                 )}
 
                 {selectedMethod === 'card' && (
-                  <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+                  <div className="p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] space-y-3">
                     <div>
-                      <label className="text-xs font-semibold text-slate-300 block mb-1">Card Number</label>
+                      <label className="text-xs font-semibold text-[#F3F4F6] block mb-1">Card Number</label>
                       <input
                         type="text"
                         placeholder="4532 •••• •••• 8892"
                         value={cardNumber}
                         onChange={(e) => setCardNumber(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C14] border border-slate-800 text-white text-xs font-mono focus:outline-none focus:border-indigo-500"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#08090C] border border-white/[0.08] text-white text-xs font-mono focus:outline-none focus:border-[#819BFF]/60 transition-colors"
                         required
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs font-semibold text-slate-300 block mb-1">Expiry</label>
+                        <label className="text-xs font-semibold text-[#F3F4F6] block mb-1">Expiry</label>
                         <input
                           type="text"
                           placeholder="MM/YY"
                           value={cardExpiry}
                           onChange={(e) => setCardExpiry(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C14] border border-slate-800 text-white text-xs font-mono focus:outline-none focus:border-indigo-500"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[#08090C] border border-white/[0.08] text-white text-xs font-mono focus:outline-none focus:border-[#819BFF]/60 transition-colors"
                           required
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-semibold text-slate-300 block mb-1">CVV</label>
+                        <label className="text-xs font-semibold text-[#F3F4F6] block mb-1">CVV</label>
                         <input
                           type="password"
                           placeholder="•••"
                           maxLength={4}
                           value={cardCvv}
                           onChange={(e) => setCardCvv(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C14] border border-slate-800 text-white text-xs font-mono focus:outline-none focus:border-indigo-500"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[#08090C] border border-white/[0.08] text-white text-xs font-mono focus:outline-none focus:border-[#819BFF]/60 transition-colors"
                           required
                         />
                       </div>
@@ -572,12 +572,12 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                 )}
 
                 {selectedMethod === 'netbanking' && (
-                  <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
-                    <label className="text-xs font-semibold text-slate-300 block">Select Primary Bank</label>
+                  <div className="p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] space-y-3">
+                    <label className="text-xs font-semibold text-[#F3F4F6] block">Select Primary Bank</label>
                     <select
                       value={selectedBank}
                       onChange={(e) => setSelectedBank(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C14] border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#08090C] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-[#819BFF]/60 transition-colors"
                     >
                       <option value="HDFC Bank">HDFC Bank</option>
                       <option value="ICICI Bank">ICICI Bank</option>
@@ -589,7 +589,7 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                 )}
 
                 {/* Cost Breakdown */}
-                <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800 text-xs font-mono space-y-1.5 text-slate-400">
+                <div className="p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] text-xs font-mono space-y-1.5 text-[#9CA3AF]">
                   <div className="flex justify-between">
                     <span>Fiat Amount:</span>
                     <span className="text-white">{fiatCurrency === 'USD' ? `$${depositAmount}` : `₹${depositAmount}`}</span>
@@ -602,7 +602,7 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                     <span>Base Sepolia Mint/Gas Subsidy:</span>
                     <span>-${networkFee.toFixed(2)} USDC</span>
                   </div>
-                  <div className="border-t border-slate-800 pt-1.5 flex justify-between font-bold text-white">
+                  <div className="border-t border-white/[0.08] pt-1.5 flex justify-between font-bold text-white">
                     <span>Net Credit to Agent Wallet:</span>
                     <span className="text-emerald-400">+{netCreditUsdc} USDC</span>
                   </div>
@@ -612,7 +612,7 @@ export const CustomerWalletPage: React.FC<{ onNavigate: (screen: string) => void
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold text-xs shadow-glow-accent transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-[#819BFF] to-[#9B8AFF] hover:from-indigo-500 hover:to-[#9B8AFF] text-white font-bold text-xs shadow-glow-accent transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isProcessing ? (
                     <>

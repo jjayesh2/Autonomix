@@ -49,16 +49,16 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
 
   if (!taskId || (!loading && !task)) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-        <Receipt className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+      <div className="max-w-2xl mx-auto px-4 py-20 text-center animate-fade-in">
+        <Receipt className="w-12 h-12 text-[#9CA3AF] mx-auto mb-4" />
         <h2 className="text-xl font-bold text-white">No completed task results found</h2>
-        <p className="text-xs text-slate-400 mt-2 mb-6">Select or run a task to review its cost breakdown and verified receipts.</p>
+        <p className="text-xs text-[#9CA3AF] mt-2 mb-6">Select or run a task to review its cost breakdown and verified receipts.</p>
         <button
           onClick={() => {
             playClick();
             onNavigate('create_task');
           }}
-          className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-colors"
+          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-[#819BFF] hover:from-indigo-500 hover:to-[#819BFF] text-white font-semibold text-xs shadow-glow-accent transition-all"
         >
           Create Task
         </button>
@@ -66,10 +66,15 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
     );
   }
 
-  // Calculate platform fee vs seller payout
-  const totalPaid = task?.total_cost || 0;
-  const platformFee = Number((totalPaid * 0.10).toFixed(4));
-  const sellerPayout = Number((totalPaid - platformFee).toFixed(4));
+  // Calculate fee accounting: separate seller service spend from model provider costs
+  const sellerGross = Number(steps.reduce((acc, s) => acc + (s.price_paid || 0), 0).toFixed(4));
+  const totalPaid = Number((task?.total_cost || 0).toFixed(4));
+  // Platform fee is an internal 10% ledger accounting allocation on seller service transactions
+  const platformFee = Number((sellerGross * 0.10).toFixed(4));
+  // Seller net earnings (90% internal allocation)
+  const sellerPayout = Number((sellerGross - platformFee).toFixed(4));
+  // AI Model Provider Cost (e.g. Gemini token planning charges)
+  const modelProviderCost = Number(Math.max(0, totalPaid - sellerGross).toFixed(4));
 
   // Extract real products from steps (Data Agent or Scraper Agent)
   const productStep = steps.find((s) => s.output_payload?.products || s.output_payload?.items);
@@ -89,7 +94,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             Results & Verified Cost Breakdown
           </h1>
-          <p className="text-xs text-slate-400 mt-1 max-w-xl truncate">
+          <p className="text-xs text-[#9CA3AF] mt-1 max-w-xl truncate">
             {task?.description}
           </p>
         </div>
@@ -99,7 +104,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
             playClick();
             onNavigate('create_task');
           }}
-          className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all flex items-center gap-2 shadow-glow-accent"
+          className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-[#819BFF] hover:from-indigo-500 hover:to-[#819BFF] text-white font-semibold text-xs transition-all flex items-center gap-2 shadow-glow-accent transform hover:-translate-y-0.5"
         >
           <RotateCcw className="w-4 h-4" />
           Run Another Task
@@ -108,7 +113,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
 
       {/* Verified Products Showcase Card (If product research query) */}
       {rawProducts.length > 0 && (
-        <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-cyan-500/30 space-y-5">
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#11141A] border border-cyan-500/30 space-y-5 shadow-card-elevated">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-5 h-5 text-cyan-400" />
@@ -130,11 +135,11 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
               return (
                 <div
                   key={item.id || idx}
-                  className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-cyan-500/40 transition-all flex flex-col justify-between group space-y-3"
+                  className="p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] hover:border-white/[0.16] card-interactive transition-all flex flex-col justify-between group space-y-3"
                 >
                   <div>
                     <div className="flex items-center justify-between text-[11px] font-mono mb-1.5">
-                      <span className="text-slate-400 truncate max-w-[120px]">
+                      <span className="text-[#9CA3AF] truncate max-w-[120px]">
                         {item.brand || item.category || 'Hardware'}
                       </span>
                       <span
@@ -148,18 +153,18 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
                       </span>
                     </div>
 
-                    <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-2">
+                    <h4 className="text-xs font-bold text-white group-hover:text-[#819BFF] transition-colors line-clamp-2">
                       {item.title}
                     </h4>
 
                     {item.description && (
-                      <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                      <p className="text-[11px] text-[#9CA3AF] mt-1 line-clamp-2">
                         {item.description}
                       </p>
                     )}
                   </div>
 
-                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                  <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between">
                     <div>
                       <div className="text-xs font-mono font-extrabold text-emerald-400">
                         {itemPrice}
@@ -176,7 +181,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
                       href={itemUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-1 bg-cyan-950/40 px-2 py-1 rounded border border-cyan-800/40"
+                      className="text-[11px] font-mono text-[#819BFF] hover:underline flex items-center gap-1 bg-[#171A22] px-2.5 py-1 rounded-lg border border-white/[0.08]"
                     >
                       <span>Source</span>
                       <ExternalLink className="w-3 h-3" />
@@ -190,15 +195,15 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
       )}
 
       {/* Final Synthesized Output Card */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-4">
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#11141A] border border-white/[0.08] space-y-4 shadow-card-elevated">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5 font-mono">
-            <Cpu className="w-4 h-4 text-cyan-400" />
+          <span className="text-xs font-bold text-[#819BFF] uppercase tracking-wider flex items-center gap-1.5 font-mono">
+            <Cpu className="w-4 h-4 text-[#819BFF]" />
             Executive Synthesized Result
           </span>
           <div className="flex items-center gap-2">
             {inferencePayload?.ai_telemetry?.model && (
-              <span className="text-[10px] font-mono text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+              <span className="text-[10px] font-mono text-[#819BFF] bg-[#819BFF]/10 px-2 py-0.5 rounded border border-[#819BFF]/20">
                 {inferencePayload.ai_telemetry.model}
               </span>
             )}
@@ -208,19 +213,19 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+        <div className="p-5 rounded-2xl bg-[#0D0F14] border border-white/[0.08] space-y-3">
           <h3 className="text-sm font-bold text-white leading-relaxed">
             {inferencePayload?.summary || result?.final_summary || 'Task completed with autonomous agent settlements.'}
           </h3>
 
           {/* Key Takeaways */}
           {inferencePayload?.key_takeaways && inferencePayload.key_takeaways.length > 0 && (
-            <div className="space-y-1.5 pt-2 border-t border-slate-800">
-              <span className="text-[11px] font-mono text-slate-400 uppercase">Key Takeaways:</span>
+            <div className="space-y-1.5 pt-2 border-t border-white/[0.08]">
+              <span className="text-[11px] font-mono text-[#9CA3AF] uppercase">Key Takeaways:</span>
               <ul className="space-y-1">
                 {inferencePayload.key_takeaways.map((takeaway: string, idx: number) => (
-                  <li key={idx} className="text-xs text-slate-300 flex items-start gap-2">
-                    <span className="text-cyan-400 font-bold">•</span>
+                  <li key={idx} className="text-xs text-[#F3F4F6] flex items-start gap-2">
+                    <span className="text-[#819BFF] font-bold">•</span>
                     <span>{takeaway}</span>
                   </li>
                 ))}
@@ -228,26 +233,26 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
             </div>
           )}
 
-          <p className="text-xs text-slate-400 leading-relaxed pt-2">
+          <p className="text-xs text-[#9CA3AF] leading-relaxed pt-2">
             {task?.rationale}
           </p>
         </div>
       </div>
 
       {/* Itemized Economics & Fee Breakdown */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#11141A] border border-white/[0.08] space-y-6 shadow-card-elevated">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
             <Receipt className="w-4 h-4 text-emerald-400" />
             Itemized Ledger & x402 Micropayments
           </h3>
-          <span className="text-xs font-mono text-slate-400">Token: USDC (Base Sepolia 84532)</span>
+          <span className="text-xs font-mono text-[#9CA3AF]">Token: USDC (Base Sepolia 84532)</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-mono text-[11px]">
+              <tr className="border-b border-white/[0.08] text-[#9CA3AF] font-mono text-[11px]">
                 <th className="pb-3 font-semibold">Service Agent</th>
                 <th className="pb-3 font-semibold">Action</th>
                 <th className="pb-3 font-semibold">Latency</th>
@@ -255,7 +260,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
                 <th className="pb-3 font-semibold text-right">Settlement Proof</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-sans">
+            <tbody className="divide-y divide-white/[0.04] font-sans">
               {steps.map((step) => {
                 const receipt = step.output_payload?.paymentReceipt || {};
                 const isBroadcast = receipt.settlementType === 'onchain_broadcast';
@@ -263,10 +268,10 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
                 const displayHash = step.tx_hash || receipt.voucherDigest;
 
                 return (
-                  <tr key={step.id} className="hover:bg-slate-900/40">
+                  <tr key={step.id} className="hover:bg-[#171A22] transition-colors">
                     <td className="py-3 font-bold text-white">{step.agent_name}</td>
-                    <td className="py-3 text-slate-400">{step.action_type}</td>
-                    <td className="py-3 font-mono text-slate-400">{step.latency_ms}ms</td>
+                    <td className="py-3 text-[#9CA3AF]">{step.action_type}</td>
+                    <td className="py-3 font-mono text-[#9CA3AF]">{step.latency_ms}ms</td>
                     <td className="py-3 text-right font-mono font-bold text-emerald-400">
                       +{step.price_paid.toFixed(2)}
                     </td>
@@ -276,7 +281,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
                           href={explorerLink}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-cyan-400 hover:underline inline-flex items-center gap-1"
+                          className="text-[#819BFF] hover:underline inline-flex items-center gap-1"
                         >
                           <span>{isBroadcast ? 'On-Chain' : 'Permit'} {displayHash.slice(0, 8)}...</span>
                           <ExternalLink className="w-3 h-3" />
@@ -293,22 +298,35 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
         </div>
 
         {/* Totals Summary */}
-        <div className="pt-4 border-t border-slate-800/80 space-y-2 text-xs font-mono">
-          <div className="flex justify-between text-slate-400">
-            <span>Seller Net Payout (90%):</span>
-            <span className="text-slate-200">{sellerPayout.toFixed(4)} USDC</span>
+        <div className="pt-4 border-t border-white/[0.08] space-y-2 text-xs font-mono">
+          <div className="flex justify-between text-[#9CA3AF]">
+            <span>Seller Service Gross:</span>
+            <span className="text-[#F3F4F6]">{sellerGross.toFixed(4)} USDC</span>
           </div>
-          <div className="flex justify-between text-slate-400">
-            <span>Platform Commission (10%):</span>
-            <span className="text-slate-200">{platformFee.toFixed(4)} USDC</span>
+          <div className="flex justify-between text-[#9CA3AF]">
+            <span>Seller Net Allocation (90%):</span>
+            <span className="text-[#F3F4F6]">{sellerPayout.toFixed(4)} USDC</span>
           </div>
-          <div className="flex justify-between text-sm font-bold text-white pt-2 border-t border-slate-800">
-            <span>Total Amount Paid:</span>
+          <div className="flex justify-between text-[#9CA3AF]">
+            <span>Platform Commission (10% internal ledger):</span>
+            <span className="text-[#F3F4F6]">{platformFee.toFixed(4)} USDC</span>
+          </div>
+          {modelProviderCost > 0 && (
+            <div className="flex justify-between text-[#9CA3AF]">
+              <span>AI Model Provider Cost (Gemini Planning):</span>
+              <span className="text-amber-400">+{modelProviderCost.toFixed(4)} USDC</span>
+            </div>
+          )}
+          <div className="flex justify-between text-sm font-bold text-white pt-2 border-t border-white/[0.08]">
+            <span>Total Task Spend:</span>
             <span className="text-emerald-400 text-base">{totalPaid.toFixed(4)} USDC</span>
           </div>
           <div className="flex justify-between text-[11px] text-slate-500 pt-1">
             <span>Budget Cap: {task?.budget_limit.toFixed(2)} USDC</span>
             <span>Remaining Unspent: {remainingBudget.toFixed(4)} USDC</span>
+          </div>
+          <div className="text-[10px] text-slate-500 italic pt-1">
+            * Note: The 90/10 split represents an internal ledger commission accounting allocation, not an on-chain split smart contract payout.
           </div>
         </div>
       </div>
@@ -316,16 +334,16 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
       {/* Individual Agent Output Inspectors */}
       <div className="space-y-4">
         <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-          <Layers className="w-4 h-4 text-indigo-400" />
+          <Layers className="w-4 h-4 text-[#819BFF]" />
           Verified Individual Agent Service Outputs
         </h3>
 
         {steps.map((step) => (
-          <div key={step.id} className="p-5 rounded-2xl bg-[#0F1626] border border-slate-800 space-y-3">
+          <div key={step.id} className="p-5 rounded-2xl bg-[#11141A] border border-white/[0.08] space-y-3 shadow-card-elevated">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-white">{step.agent_name}</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-cyan-400 border border-slate-800">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#0D0F14] text-[#819BFF] border border-white/[0.08]">
                   HTTP 402 Paid
                 </span>
               </div>
@@ -334,7 +352,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ taskId, onNavigate }) 
               </span>
             </div>
 
-            <pre className="p-4 rounded-xl bg-[#080C14] border border-slate-800 text-[11px] font-mono text-slate-300 overflow-x-auto leading-relaxed">
+            <pre className="p-4 rounded-xl bg-[#08090C] border border-white/[0.08] text-[11px] font-mono text-slate-300 overflow-x-auto leading-relaxed">
               {JSON.stringify(step.output_payload, null, 2)}
             </pre>
           </div>

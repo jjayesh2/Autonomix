@@ -1,5 +1,5 @@
 import { config } from '../config/index.js';
-import { GeminiProvider } from './geminiProvider.js';
+import { GeminiProvider, AIQuotaExhaustedError } from './geminiProvider.js';
 import {
   AIProviderType,
   AICompletionResult,
@@ -88,6 +88,12 @@ export class AIService {
   private geminiProvider: GeminiProvider;
   private defaultProvider: AIProviderType;
 
+  // In-flight planning promises for request deduplication
+  private inFlightPlans = new Map<string, Promise<AICompletionResult<StructuredTaskPlan>>>();
+  // Memory cache of generated plans with TTL (60s)
+  private planCache = new Map<string, { result: AICompletionResult<StructuredTaskPlan>; timestamp: number }>();
+  private static readonly PLAN_CACHE_TTL_MS = 60000;
+
   constructor() {
     const geminiKey = process.env.GEMINI_API_KEY || config.ai.geminiApiKey;
     this.geminiProvider = new GeminiProvider(geminiKey, process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite');
@@ -102,9 +108,15 @@ export class AIService {
     return this.geminiProvider.testConnection();
   }
 
+  public clearPlanCache(): void {
+    this.planCache.clear();
+    this.inFlightPlans.clear();
+  }
+
   /**
    * Buyer Agent Planning using Gemini LLM
    * Interprets natural language, selects agents from marketplace, produces structured plan.
+   * Includes request deduplication and in-memory plan caching.
    */
   async planTaskWithAI(
     description: string,
@@ -115,6 +127,24 @@ export class AIService {
     if (this.defaultProvider !== 'deterministic') {
       if (!this.geminiProvider.isConfigured()) {
         throw new Error('Buyer Agent Planning Failed: GEMINI_API_KEY is not configured. Live planning requires a valid Google Gemini API key.');
+      }
+
+      // Check request deduplication key
+      const cacheKey = `${description.trim().toLowerCase()}::${budgetLimit.toFixed(4)}`;
+
+      // Return identical in-flight promise if already executing
+      if (this.inFlightPlans.has(cacheKey)) {
+        console.log(`[AIService] Reusing in-flight Gemini planning promise for duplicate request: "${description.slice(0, 36)}..."`);
+        return await this.inFlightPlans.get(cacheKey)!;
+      }
+
+      // Return recent cached plan if within TTL
+      if (this.planCache.has(cacheKey)) {
+        const cached = this.planCache.get(cacheKey)!;
+        if (Date.now() - cached.timestamp < AIService.PLAN_CACHE_TTL_MS) {
+          console.log(`[AIService] Returning cached Gemini plan (TTL 60s) for: "${description.slice(0, 36)}..."`);
+          return { ...cached.result, latencyMs: 0 };
+        }
       }
 
       const agentsSummary = availableAgents.map((a) => ({
@@ -139,6 +169,9 @@ Instructions:
 2. Select appropriate agents from the available marketplace agents based on capability, price, and reputation.
 3. Order the execution sequence logically (typically Data Query -> Web Scraping/Extraction -> AI Inference Synthesis).
 4. Provide structured input payloads for each step matching agent requirements.
+   IMPORTANT for Scraping steps:
+   - If the user did NOT supply an explicit valid URL (starting with http:// or https://) in the task description, DO NOT invent or fabricate a fictional hostname or domain name (such as example-transport-aggregator.com or fake-site.com).
+   - Instead, specify keywords in the 'target' field (e.g. 'hardware catalog', 'laptop prices', 'crypto news'). The scraping sandbox will route to its verified permitted targets.
 5. Calculate the total estimated cost (sum of step prices). It must not exceed ${budgetLimit} USDC.
 6. Provide an explanation of the multi-agent orchestration strategy.
 
@@ -162,24 +195,39 @@ Respond with valid JSON matching this structure:
   "estimatedTotalUsdc": number
 }`;
 
-      try {
-        const result = await this.geminiProvider.generateStructured<StructuredTaskPlan>({
-          prompt,
-          systemInstruction: 'You are an autonomous AI Agent Orchestration Planner. You emit strict, valid JSON plans only.',
-          schema: TASK_PLAN_SCHEMA,
-          temperature: 0.1,
-          timeoutMs: 25000,
-        });
+      const planningPromise = (async () => {
+        try {
+          const timeoutMs = Number(process.env.AI_REQUEST_TIMEOUT_MS) || 25000;
+          const result = await this.geminiProvider.generateStructured<StructuredTaskPlan>({
+            prompt,
+            systemInstruction: 'You are an autonomous AI Agent Orchestration Planner. You emit strict, valid JSON plans only.',
+            schema: TASK_PLAN_SCHEMA,
+            temperature: 0.1,
+            timeoutMs,
+          });
 
-        // Double check budget constraint on parsed output
-        let totalCost = result.data.steps.reduce((sum, s) => sum + s.estimatedCostUsd, 0);
-        result.data.estimatedTotalUsdc = Number(totalCost.toFixed(4));
+          // Double check budget constraint on parsed output
+          let totalCost = result.data.steps.reduce((sum, s) => sum + s.estimatedCostUsd, 0);
+          result.data.estimatedTotalUsdc = Number(totalCost.toFixed(4));
 
-        return result;
-      } catch (err: any) {
-        console.error(`[AIService] Gemini planning failed: ${err.message}.`);
-        throw new Error(`Buyer Agent Planning Failed: Live Google Gemini execution failed (${err.message}). Live mode prohibits silent mock fallbacks.`);
-      }
+          // Cache result
+          this.planCache.set(cacheKey, { result, timestamp: Date.now() });
+
+          return result;
+        } catch (err: any) {
+          if (err instanceof AIQuotaExhaustedError || err.status === 429 || String(err.message).includes('429')) {
+            console.error(`[AIService] Gemini quota exhausted: ${err.message}`);
+            throw new Error(`Buyer Agent Planning Failed: Google Gemini quota exhausted (HTTP 429). Retry suggested after ${err.retryAfterSeconds || 15}s.`);
+          }
+          console.error(`[AIService] Gemini planning failed: ${err.message}.`);
+          throw new Error(`Buyer Agent Planning Failed: Live Google Gemini execution failed (${err.message}). Live mode prohibits silent mock fallbacks.`);
+        } finally {
+          this.inFlightPlans.delete(cacheKey);
+        }
+      })();
+
+      this.inFlightPlans.set(cacheKey, planningPromise);
+      return await planningPromise;
     }
 
     // 2. Deterministic Fallback Planner (Explicitly only when AI_PROVIDER=deterministic for offline tests)

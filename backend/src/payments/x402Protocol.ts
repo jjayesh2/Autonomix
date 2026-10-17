@@ -496,7 +496,7 @@ export class X402ProtocolEngine {
     // 7. Check if on-chain transaction hash was submitted and verified on Base Sepolia
     let onChainTxHash: string | undefined = auth.payload?.txHash || (auth.settlementType === 'onchain_broadcast' ? auth.txHash : undefined);
     let settlementType: 'onchain_broadcast' | 'eip712_permit_voucher' = 'eip712_permit_voucher';
-    let explorerUrl = `${config.web3.explorerBaseUrl}/address/${expectedRecipient}`;
+    let explorerUrl: string;
 
     if (onChainTxHash && onChainTxHash.startsWith('0x') && onChainTxHash.length === 66) {
       try {
@@ -507,17 +507,22 @@ export class X402ProtocolEngine {
           explorerUrl = `${config.web3.explorerBaseUrl}/tx/${onChainTxHash}`;
         } else {
           onChainTxHash = undefined;
+          explorerUrl = `${config.web3.explorerBaseUrl}/tx/${voucherDigest}`;
         }
       } catch {
         onChainTxHash = undefined;
+        explorerUrl = `${config.web3.explorerBaseUrl}/tx/${voucherDigest}`;
       }
+    } else {
+      // For EIP-712 permit voucher micropayments, explorer URL targets the transaction/voucher hash directly
+      explorerUrl = `${config.web3.explorerBaseUrl}/tx/${voucherDigest}`;
     }
 
     return {
       verified: true,
       txHash: onChainTxHash || voucherDigest,
       voucherDigest,
-      explorerUrl,
+      explorerUrl, // ALWAYS transaction-specific (/tx/...), never a wallet address (/address/...)
       amountPaid,
       sellerAmount,
       platformFee,

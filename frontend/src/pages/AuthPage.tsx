@@ -97,14 +97,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md p-8 rounded-3xl bg-[#0F1626] border border-slate-800 shadow-2xl relative">
+    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 animate-fade-in">
+      <div className="w-full max-w-md p-8 rounded-3xl bg-[#11141A] border border-white/[0.08] shadow-card-elevated relative">
         {/* Glow backdrop */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 bg-indigo-600/15 blur-3xl -z-10 rounded-full" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 bg-[#819BFF]/15 blur-3xl -z-10 rounded-full" />
 
         <div className="text-center mb-8">
           <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-3">
-            <Key className="w-6 h-6 text-indigo-400" />
+            <Key className="w-6 h-6 text-[#819BFF]" />
           </div>
           <h2 className="text-2xl font-extrabold text-white tracking-tight">
             {mode === 'signin'
@@ -113,7 +113,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
               ? 'Create Customer Account'
               : 'Reset Your Password'}
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[#9CA3AF] mt-1">
             {mode === 'signin'
               ? 'Access autonomous agent orchestration & x402 settlements'
               : mode === 'signup'
@@ -149,7 +149,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold text-xs transition-all flex items-center justify-center gap-2.5 shadow-sm"
+              className="w-full py-2.5 px-4 rounded-xl bg-[#0D0F14] hover:bg-[#171A22] text-[#F3F4F6] border border-white/[0.08] hover:border-white/[0.16] font-semibold text-xs transition-all flex items-center justify-center gap-2.5 shadow-sm"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -173,9 +173,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
             </button>
 
             <div className="flex items-center gap-3 my-4">
-              <div className="h-[1px] flex-1 bg-slate-800" />
-              <span className="text-[11px] font-mono text-slate-500 uppercase">Or with email</span>
-              <div className="h-[1px] flex-1 bg-slate-800" />
+              <div className="h-[1px] flex-1 bg-white/[0.08]" />
+              <span className="text-[11px] font-mono text-[#9CA3AF] uppercase">Or with email</span>
+              <div className="h-[1px] flex-1 bg-white/[0.08]" />
             </div>
           </div>
         )}
@@ -184,32 +184,32 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'signup' && (
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Full Name</label>
+              <label className="block text-xs font-medium text-[#F3F4F6] mb-1.5">Full Name</label>
               <div className="relative">
-                <User className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <User className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-3" />
                 <input
                   type="text"
                   required
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Alex Rivera"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-[#0D0F14] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#F3F4F6] placeholder-[#9CA3AF]/60 focus:outline-none focus:border-[#819BFF]/60 transition-colors"
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">Email Address</label>
+            <label className="block text-xs font-medium text-[#F3F4F6] mb-1.5">Email Address</label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+              <Mail className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-3" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="buyer@enterprise.com"
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-[#0D0F14] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#F3F4F6] placeholder-[#9CA3AF]/60 focus:outline-none focus:border-[#819BFF]/60 transition-colors"
               />
             </div>
           </div>
@@ -217,7 +217,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
           {mode !== 'forgot' && (
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium text-slate-300">Password</label>
+                <label className="text-xs font-medium text-[#F3F4F6]">Password</label>
                 {mode === 'signin' && (
                   <button
                     type="button"
@@ -225,21 +225,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
                       playClick();
                       setMode('forgot');
                     }}
-                    className="text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors"
+                    className="text-[11px] text-[#819BFF] hover:text-[#9B8AFF] transition-colors"
                   >
                     Forgot password?
                   </button>
                 )}
               </div>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <Lock className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-3" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-[#0D0F14] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#F3F4F6] placeholder-[#9CA3AF]/60 focus:outline-none focus:border-[#819BFF]/60 transition-colors"
                 />
               </div>
             </div>
@@ -248,7 +248,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-glow-accent transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-[#819BFF] hover:from-indigo-500 hover:to-[#819BFF] text-white font-semibold text-xs shadow-glow-accent transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
           >
             <span>
               {loading
@@ -266,7 +266,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
         {/* Toggle between Sign In / Sign Up / Forgot */}
         <div className="mt-6 text-center text-xs">
           {mode === 'signin' ? (
-            <p className="text-slate-400">
+            <p className="text-[#9CA3AF]">
               Don't have an account?{' '}
               <button
                 type="button"
@@ -275,13 +275,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
                   setMode('signup');
                   setMessage(null);
                 }}
-                className="text-indigo-400 hover:text-indigo-300 font-semibold"
+                className="text-[#819BFF] hover:text-[#9B8AFF] font-semibold transition-colors"
               >
                 Sign Up as Customer
               </button>
             </p>
           ) : (
-            <p className="text-slate-400">
+            <p className="text-[#9CA3AF]">
               Already have an account?{' '}
               <button
                 type="button"
@@ -290,7 +290,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
                   setMode('signin');
                   setMessage(null);
                 }}
-                className="text-indigo-400 hover:text-indigo-300 font-semibold"
+                className="text-[#819BFF] hover:text-[#9B8AFF] font-semibold transition-colors"
               >
                 Sign In
               </button>
@@ -298,31 +298,31 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
           )}
         </div>
 
-        {/* Evaluation Demo Account Shortcuts (Distinct from public navbar dropdown) */}
-        <div className="mt-8 pt-6 border-t border-slate-800/80">
+        {/* Evaluation Demo Account Shortcuts */}
+        <div className="mt-8 pt-6 border-t border-white/[0.08]">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-mono text-slate-400">Hackathon Test Accounts</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 font-mono">Demo</span>
+            <span className="text-[11px] font-mono text-[#9CA3AF]">Hackathon Test Accounts</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#0D0F14] border border-white/[0.08] text-[#9CA3AF] font-mono">Demo</span>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => handleDemoSignIn('customer')}
-              className="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] font-mono text-cyan-400 transition-colors"
+              className="py-1.5 px-2 rounded-lg bg-[#0D0F14] hover:bg-[#171A22] border border-white/[0.08] text-[11px] font-mono text-cyan-400 transition-colors"
             >
               Customer
             </button>
             <button
               type="button"
               onClick={() => handleDemoSignIn('developer')}
-              className="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] font-mono text-indigo-400 transition-colors"
+              className="py-1.5 px-2 rounded-lg bg-[#0D0F14] hover:bg-[#171A22] border border-white/[0.08] text-[11px] font-mono text-[#819BFF] transition-colors"
             >
               Developer
             </button>
             <button
               type="button"
               onClick={() => handleDemoSignIn('admin')}
-              className="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] font-mono text-violet-400 transition-colors"
+              className="py-1.5 px-2 rounded-lg bg-[#0D0F14] hover:bg-[#171A22] border border-white/[0.08] text-[11px] font-mono text-[#9B8AFF] transition-colors"
             >
               Admin
             </button>
@@ -332,24 +332,24 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
 
       {/* Google OAuth Setup Guide Modal */}
       {showGoogleSetupModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#0F1626] border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-4">
-            <div className="flex items-center gap-2 text-indigo-400">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#11141A] border border-white/[0.08] rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-4 shadow-card-elevated">
+            <div className="flex items-center gap-2 text-[#819BFF]">
               <Sparkles className="w-5 h-5 text-cyan-400" />
               <h3 className="text-base font-bold text-white">Google OAuth Setup Instructions</h3>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-[#F3F4F6] leading-relaxed">
               Google OAuth is fully wired through Supabase Auth. To enable it on your live deployment:
             </p>
-            <ol className="list-decimal list-inside text-xs text-slate-400 space-y-2">
+            <ol className="list-decimal list-inside text-xs text-[#9CA3AF] space-y-2">
               <li>Open Google Cloud Console -&gt; APIs & Services -&gt; Credentials.</li>
-              <li>Create an OAuth 2.0 Client ID with Authorized redirect URI: <code className="bg-slate-900 px-1 py-0.5 rounded text-cyan-400 text-[11px]">https://&lt;project&gt;.supabase.co/auth/v1/callback</code>.</li>
+              <li>Create an OAuth 2.0 Client ID with Authorized redirect URI: <code className="bg-[#0D0F14] px-1 py-0.5 rounded text-cyan-400 text-[11px] border border-white/[0.08]">https://&lt;project&gt;.supabase.co/auth/v1/callback</code>.</li>
               <li>In your Supabase Dashboard -&gt; Authentication -&gt; Providers -&gt; Google, paste your Client ID and Client Secret, then enable Google sign-in.</li>
             </ol>
-            <div className="pt-4 border-t border-slate-800 flex justify-end">
+            <div className="pt-4 border-t border-white/[0.08] flex justify-end">
               <button
                 onClick={() => setShowGoogleSetupModal(false)}
-                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-[#819BFF] hover:from-indigo-500 hover:to-[#819BFF] text-white text-xs font-semibold shadow-glow-accent transition-all"
               >
                 Understood
               </button>

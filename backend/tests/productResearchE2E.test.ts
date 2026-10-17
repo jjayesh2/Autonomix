@@ -2,10 +2,11 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import axios from 'axios';
 import { x402Engine } from '../src/payments/x402Protocol.js';
 import { DATA_AGENT_CONFIG, handleDataAgentService } from '../src/sellers/dataAgent.js';
-import { SCRAPER_AGENT_CONFIG, handleScraperAgentService, isSsrfSafeUrl } from '../src/sellers/scraperAgent.js';
+import { SCRAPER_AGENT_CONFIG, handleScraperAgentService, isSsrfSafeUrl, isPrivateOrBlockedIp } from '../src/sellers/scraperAgent.js';
 import { INFERENCE_AGENT_CONFIG, handleInferenceAgentService } from '../src/sellers/inferenceAgent.js';
 import { aiService } from '../src/ai/aiService.js';
 import { db } from '../src/db/supabase.js';
+import { budgetGuard } from '../src/payments/budgetGuard.js';
 
 describe('Autonomix — Real Product Research & Agent Execution Tests', () => {
   const dummyRecipient = '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC';
@@ -229,6 +230,94 @@ describe('Autonomix — Real Product Research & Agent Execution Tests', () => {
       expect(statusCode).toBe(400);
       expect(serviceOutput.error).toBe('SSRF Protection Violation');
     });
+
+    it('rejects unresolvable hostname (e.g. example-transport-aggregator.com) with HTTP 502 Hostname Resolution Failed and no settlement', async () => {
+      const challenge = x402Engine.createChallenge(dummyRecipient, 0.03, 'WebExtract Sandbox Crawler');
+      const auth = await x402Engine.authorizePayment(challenge, dummyRecipient, 0.05);
+
+      let serviceOutput: any;
+      let statusCode = 0;
+
+      const mockReq: any = {
+        headers: {
+          authorization: `Bearer ${Buffer.from(JSON.stringify(auth)).toString('base64')}`,
+        },
+        body: { url: 'https://example-transport-aggregator.com/api/routes' },
+        query: {},
+      };
+
+      const mockRes: any = {
+        set: () => {},
+        status: (code: number) => {
+          statusCode = code;
+          return mockRes;
+        },
+        json: (data: any) => {
+          serviceOutput = data;
+        },
+      };
+
+      await handleScraperAgentService(mockReq, mockRes);
+      expect(statusCode).toBe(502);
+      expect(serviceOutput.error).toBe('Hostname Resolution Failed');
+      expect(serviceOutput.status).toBe('dns_failure');
+      expect(serviceOutput.hostname).toBe('example-transport-aggregator.com');
+      expect(serviceOutput.items).toBeUndefined();
+    });
+
+    it('extracts live HTML page elements using Cheerio on verified URL (https://example.com)', async () => {
+      const challenge = x402Engine.createChallenge(dummyRecipient, 0.03, 'WebExtract Sandbox Crawler');
+      const auth = await x402Engine.authorizePayment(challenge, dummyRecipient, 0.05);
+
+      let serviceOutput: any;
+      let statusCode = 0;
+
+      const mockReq: any = {
+        headers: {
+          authorization: `Bearer ${Buffer.from(JSON.stringify(auth)).toString('base64')}`,
+        },
+        body: { url: 'https://example.com' },
+        query: {},
+      };
+
+      const mockRes: any = {
+        set: () => {},
+        status: (code: number) => {
+          statusCode = code;
+          return mockRes;
+        },
+        json: (data: any) => {
+          serviceOutput = data;
+        },
+      };
+
+      await handleScraperAgentService(mockReq, mockRes);
+      expect(statusCode).toBe(200);
+      expect(serviceOutput.parser).toContain('Cheerio');
+      expect(serviceOutput.items_found).toBeGreaterThan(0);
+      expect(serviceOutput.items.length).toBeGreaterThan(0);
+      expect(serviceOutput.items[0].title).toContain('Example Domain');
+      expect(serviceOutput.items[0].url).toBe('https://example.com');
+      expect(serviceOutput.items[0].headings).toBeDefined();
+    });
+
+    it('validates isPrivateOrBlockedIp against loopbacks, 10.x, 172.16-31.x, 192.168.x, 169.254.x', () => {
+      expect(isPrivateOrBlockedIp('127.0.0.1')).toBe(true);
+      expect(isPrivateOrBlockedIp('127.1.2.3')).toBe(true);
+      expect(isPrivateOrBlockedIp('10.0.0.1')).toBe(true);
+      expect(isPrivateOrBlockedIp('10.255.255.255')).toBe(true);
+      expect(isPrivateOrBlockedIp('172.16.0.1')).toBe(true);
+      expect(isPrivateOrBlockedIp('172.31.255.255')).toBe(true);
+      expect(isPrivateOrBlockedIp('172.32.0.1')).toBe(false);
+      expect(isPrivateOrBlockedIp('192.168.0.1')).toBe(true);
+      expect(isPrivateOrBlockedIp('192.168.1.100')).toBe(true);
+      expect(isPrivateOrBlockedIp('169.254.169.254')).toBe(true);
+      expect(isPrivateOrBlockedIp('::1')).toBe(true);
+      expect(isPrivateOrBlockedIp('fe80::1')).toBe(true);
+      expect(isPrivateOrBlockedIp('fc00::1')).toBe(true);
+      expect(isPrivateOrBlockedIp('8.8.8.8')).toBe(false);
+      expect(isPrivateOrBlockedIp('1.1.1.1')).toBe(false);
+    });
   });
 
   describe('3. AI Inference Agent Synthesis with Google Gemini', () => {
@@ -360,18 +449,31 @@ Agent [WebExtract Sandbox Crawler] output: {
       const dataAuth = await x402Engine.authorizePayment(dataChallenge, dummyRecipient, 0.05);
 
       let dataOutput: any;
-      await handleDataAgentService(
-        {
-          headers: { authorization: `Bearer ${Buffer.from(JSON.stringify(dataAuth)).toString('base64')}` },
-          body: { query: 'laptop' },
-          query: {},
-        } as any,
-        {
-          set: () => {},
-          status: () => ({ json: (d: any) => { dataOutput = d; } }),
-        } as any
-      );
+      let statusCode = 0;
+      const makeDataCall = async () => {
+        await handleDataAgentService(
+          {
+            headers: { authorization: `Bearer ${Buffer.from(JSON.stringify(dataAuth)).toString('base64')}` },
+            body: { query: 'laptop' },
+            query: {},
+          } as any,
+          {
+            set: () => {},
+            status: (code: number) => {
+              statusCode = code;
+              return { json: (d: any) => { dataOutput = d; } };
+            },
+          } as any
+        );
+      };
 
+      await makeDataCall();
+      if (!dataOutput?.products && statusCode === 502) {
+        await new Promise((r) => setTimeout(r, 1000));
+        await makeDataCall();
+      }
+
+      expect(dataOutput.products).toBeDefined();
       expect(dataOutput.products.length).toBeGreaterThan(0);
       const topProduct = dataOutput.products[0];
 
@@ -426,5 +528,48 @@ Agent [WebExtract Sandbox Crawler] output: {
       expect(inferOutput.ai_telemetry.provider).toBe('gemini');
       expect(inferOutput.paymentReceipt.protocol).toBe('x402 v2');
     });
+
+    it('ensures pre-settlement failure releases budget reservation without charging the buyer', async () => {
+      const testTaskId = `task_presettle_test_${Date.now()}`;
+      await db.createTask({
+        id: testTaskId,
+        user_id: 'c0000000-0000-0000-0000-000000000001',
+        title: 'Pre-settlement failure test',
+        description: 'Test budget release upon pre-settlement failure',
+        budget_limit: 0.10,
+        total_cost: 0,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+      });
+
+      // 1. Initial remaining budget must be 0.10
+      const initialRemaining = await budgetGuard.getRemainingBudget(testTaskId);
+      expect(initialRemaining).toBe(0.10);
+
+      // 2. Reserve 0.03 USDC for scraping agent
+      const reservation = await budgetGuard.reserveBudget(testTaskId, SCRAPER_AGENT_CONFIG.id, 0.03);
+      expect(reservation.success).toBe(true);
+      expect(reservation.reservationId).toBeDefined();
+
+      // Remaining budget under active lock is now 0.07 USDC
+      const reservedRemaining = await budgetGuard.getRemainingBudget(testTaskId);
+      expect(reservedRemaining).toBe(0.07);
+
+      // 3. Pre-settlement failure occurs (e.g. DNS failure / invalid endpoint / rejection)
+      // Release reservation without committing
+      budgetGuard.releaseReservation(reservation.reservationId!);
+
+      // 4. Remaining budget restores to full 0.10 USDC and task total_cost is 0
+      const restoredRemaining = await budgetGuard.getRemainingBudget(testTaskId);
+      expect(restoredRemaining).toBe(0.10);
+
+      const task = await db.getTaskById(testTaskId);
+      expect(task?.total_cost).toBe(0);
+
+      // 5. Verify no confirmed ledger transaction was created
+      const transactions = await db.getTransactions(testTaskId);
+      expect(transactions.length).toBe(0);
+    });
   });
 });
+

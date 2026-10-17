@@ -51,8 +51,8 @@ export const DeveloperEarningsPage: React.FC<{ onNavigate: (screen: string) => v
             <Coins className="w-3.5 h-3.5" />
             <span>Monetization & Seller Net Settlement</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Earnings & Payouts</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-3xl font-extrabold text-[#F3F4F6] tracking-tight">Earnings & Payouts</h1>
+          <p className="text-xs text-[#9CA3AF] mt-1">
             Transparent revenue economics: 90% net seller share, 10% platform fee, settled instantly to your Base Sepolia address.
           </p>
         </div>
@@ -61,28 +61,28 @@ export const DeveloperEarningsPage: React.FC<{ onNavigate: (screen: string) => v
       {/* Financial Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Net Seller Share */}
-        <div className="p-6 rounded-3xl bg-[#0F1626] border border-emerald-500/30 relative overflow-hidden">
+        <div className="p-6 rounded-3xl bg-[#11141A] border border-emerald-500/30 card-interactive relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-3">
+          <div className="flex items-center justify-between text-[#9CA3AF] text-xs mb-3">
             <span className="font-semibold uppercase tracking-wider text-[11px]">Net Earnings (90% Share)</span>
             <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono text-[10px] border border-emerald-500/20">
               Paid via x402
             </span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-extrabold text-white font-mono tracking-tight">
+            <span className="text-4xl font-extrabold text-[#F3F4F6] font-mono tracking-tight">
               {netEarnings.toFixed(4)}
             </span>
             <span className="text-sm font-bold text-emerald-400 font-mono">USDC</span>
           </div>
-          <div className="mt-3 text-[11px] text-slate-400">
+          <div className="mt-3 text-[11px] text-[#9CA3AF]">
             Instant on-chain transfer on each successful execution.
           </div>
         </div>
 
         {/* Platform Fee Deduction */}
-        <div className="p-6 rounded-3xl bg-[#0F1626] border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-3">
+        <div className="p-6 rounded-3xl bg-[#11141A] border border-white/[0.08] card-interactive">
+          <div className="flex items-center justify-between text-[#9CA3AF] text-xs mb-3">
             <span className="font-semibold uppercase tracking-wider text-[11px]">Platform Fee (10%)</span>
             <span className="font-mono text-slate-500 text-xs">Standard Tier</span>
           </div>
@@ -92,14 +92,14 @@ export const DeveloperEarningsPage: React.FC<{ onNavigate: (screen: string) => v
             </span>
             <span className="text-sm font-bold text-slate-500 font-mono">USDC</span>
           </div>
-          <div className="mt-3 text-[11px] text-slate-400">
+          <div className="mt-3 text-[11px] text-[#9CA3AF]">
             Covers schema validation, SSRF sandboxing, and buyer agent routing.
           </div>
         </div>
 
         {/* Gross Volume */}
-        <div className="p-6 rounded-3xl bg-[#0F1626] border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 text-xs mb-3">
+        <div className="p-6 rounded-3xl bg-[#11141A] border border-white/[0.08] card-interactive">
+          <div className="flex items-center justify-between text-[#9CA3AF] text-xs mb-3">
             <span className="font-semibold uppercase tracking-wider text-[11px]">Gross Revenue</span>
             <TrendingUp className="w-4 h-4 text-cyan-400" />
           </div>
@@ -109,17 +109,17 @@ export const DeveloperEarningsPage: React.FC<{ onNavigate: (screen: string) => v
             </span>
             <span className="text-sm font-bold text-cyan-400/80 font-mono">USDC</span>
           </div>
-          <div className="mt-3 text-[11px] text-slate-400">
+          <div className="mt-3 text-[11px] text-[#9CA3AF]">
             Total pay-per-call volume generated across all customer pipelines.
           </div>
         </div>
       </div>
 
       {/* Payout Destination Card */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-4">
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#11141A] border border-white/[0.08] card-interactive space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Wallet className="w-4 h-4 text-indigo-400" />
+          <h3 className="text-base font-bold text-[#F3F4F6] flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-[#819BFF]" />
             <span>Designated Payout Wallet</span>
           </h3>
           <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono text-[10px] border border-emerald-500/20">
@@ -127,22 +127,22 @@ export const DeveloperEarningsPage: React.FC<{ onNavigate: (screen: string) => v
           </span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
+        <div className="p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
           <div>
             <span className="text-slate-500 text-[10px] block">Recipient Address (EIP-55):</span>
-            <span className="text-white text-xs font-bold mt-0.5 block">{payoutAddress}</span>
+            <span className="text-[#F3F4F6] text-xs font-bold mt-0.5 block">{payoutAddress}</span>
           </div>
           <a
             href={`https://sepolia.basescan.org/address/${payoutAddress}`}
             target="_blank"
             rel="noreferrer"
-            className="px-4 py-2 rounded-xl bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 flex items-center gap-1.5 transition-colors text-xs self-start sm:self-auto"
+            className="px-4 py-2 rounded-xl bg-indigo-600/20 text-[#819BFF] hover:bg-indigo-600/30 flex items-center gap-1.5 transition-colors text-xs self-start sm:self-auto border border-indigo-500/30"
           >
             <span>View on Basescan</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
-        <p className="text-[11px] text-slate-400">
+        <p className="text-[11px] text-[#9CA3AF]">
           When an agent call succeeds, the HTTP 402 smart contract authorization dispatches USDC directly to this address. There is no manual payout request or minimum threshold delay.
         </p>
       </div>

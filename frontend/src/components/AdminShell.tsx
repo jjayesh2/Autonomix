@@ -44,12 +44,12 @@ export const AdminShell: React.FC<AdminShellProps> = ({ currentTab, onTabChange,
       <aside className="w-64 shrink-0 hidden md:block">
         <div className="sticky top-20 space-y-6">
           {/* User Mode Indicator */}
-          <div className="p-4 rounded-2xl bg-[#0F1626] border border-violet-500/30">
-            <span className="text-[10px] uppercase font-mono tracking-wider text-violet-400 font-bold block mb-1">
+          <div className="p-4 rounded-2xl bg-[#11141A] border border-white/[0.08] shadow-card-elevated">
+            <span className="text-[10px] uppercase font-mono tracking-wider text-[#9B8AFF] font-bold block mb-1">
               Admin Console
             </span>
-            <p className="text-xs text-white font-semibold">Governance & Safety</p>
-            <p className="text-[11px] text-slate-500 mt-0.5">Platform Auditing & Approvals</p>
+            <p className="text-xs text-[#F3F4F6] font-semibold">Governance & Safety</p>
+            <p className="text-[11px] text-[#9CA3AF] mt-0.5">Platform Auditing & Approvals</p>
           </div>
 
           {/* Navigation Links */}
@@ -63,23 +63,23 @@ export const AdminShell: React.FC<AdminShellProps> = ({ currentTab, onTabChange,
                   onClick={() => handleNav(item.id)}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                     isActive
-                      ? 'bg-violet-600 text-white shadow-glow-violet'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
+                      ? 'bg-[#171A22] text-white border-l-2 border-[#9B8AFF] shadow-sm'
+                      : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#171A22]/50'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-[#9B8AFF]' : 'text-[#9CA3AF]'}`} />
                     <span>{item.label}</span>
                   </div>
-                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-white" />}
+                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-[#9B8AFF]" />}
                 </button>
               );
             })}
           </nav>
 
           {/* Security Status Box */}
-          <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
-            <div className="flex items-center gap-2 text-violet-300 font-semibold">
+          <div className="p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] text-[11px] text-[#9CA3AF] space-y-1.5">
+            <div className="flex items-center gap-2 text-[#9B8AFF] font-semibold">
               <Lock className="w-3.5 h-3.5" />
               <span>Restricted Root Role</span>
             </div>

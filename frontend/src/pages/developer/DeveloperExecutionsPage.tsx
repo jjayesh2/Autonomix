@@ -81,8 +81,8 @@ export const DeveloperExecutionsPage: React.FC<{ onNavigate: (screen: string) =>
             <Activity className="w-3.5 h-3.5" />
             <span>Real-time Telemetry & Invocations</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Agent Executions</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-3xl font-extrabold text-[#F3F4F6] tracking-tight">Agent Executions</h1>
+          <p className="text-xs text-[#9CA3AF] mt-1">
             Live trace inspector of incoming buyer calls, HTTP 402 payment confirmations, and schema adherence for your hosted agents.
           </p>
         </div>
@@ -92,7 +92,7 @@ export const DeveloperExecutionsPage: React.FC<{ onNavigate: (screen: string) =>
             playClick();
             fetchTraces();
           }}
-          className="self-start sm:self-auto px-4 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-slate-600 text-slate-300 text-xs font-semibold flex items-center gap-2 transition-colors"
+          className="self-start sm:self-auto px-4 py-2 rounded-xl bg-[#0D0F14] border border-white/[0.08] hover:bg-[#171A22] text-[#9CA3AF] hover:text-[#F3F4F6] text-xs font-semibold flex items-center gap-2 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           <span>Refresh Traces</span>
@@ -100,7 +100,7 @@ export const DeveloperExecutionsPage: React.FC<{ onNavigate: (screen: string) =>
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-[#0F1626] border border-slate-800">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-[#11141A] border border-white/[0.08]">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -108,20 +108,20 @@ export const DeveloperExecutionsPage: React.FC<{ onNavigate: (screen: string) =>
             placeholder="Search by agent name, task ID, action..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#080C14] border border-slate-800 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+            className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#0D0F14] border border-white/[0.08] text-[#F3F4F6] text-xs placeholder:text-[#9CA3AF]/60 focus:outline-none focus:border-[#819BFF] font-mono"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <span className="text-xs text-slate-400">Payment Status:</span>
+          <Filter className="w-4 h-4 text-[#9CA3AF]" />
+          <span className="text-xs text-[#9CA3AF]">Payment Status:</span>
           <select
             value={statusFilter}
             onChange={(e) => {
               playClick();
               setStatusFilter(e.target.value);
             }}
-            className="px-3 py-1.5 rounded-xl bg-[#080C14] border border-slate-800 text-white text-xs font-mono focus:outline-none focus:border-indigo-500"
+            className="px-3 py-1.5 rounded-xl bg-[#0D0F14] border border-white/[0.08] text-[#F3F4F6] text-xs font-mono focus:outline-none focus:border-[#819BFF]"
           >
             <option value="all">All Statuses</option>
             <option value="confirmed">Confirmed</option>
@@ -133,23 +133,23 @@ export const DeveloperExecutionsPage: React.FC<{ onNavigate: (screen: string) =>
 
       {/* Traces Table */}
       {loading ? (
-        <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-3">
+        <div className="p-12 text-center text-[#9CA3AF] flex flex-col items-center gap-3">
           <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
           <span className="text-xs">Fetching execution traces from Base Sepolia ledger...</span>
         </div>
       ) : filteredTraces.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-[#0F1626] border border-slate-800 text-center space-y-3">
+        <div className="p-12 rounded-3xl bg-[#11141A] border border-white/[0.08] text-center space-y-3">
           <Activity className="w-8 h-8 text-slate-600 mx-auto" />
-          <h3 className="text-sm font-bold text-white">No execution traces found</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+          <h3 className="text-sm font-bold text-[#F3F4F6]">No execution traces found</h3>
+          <p className="text-xs text-[#9CA3AF] max-w-sm mx-auto">
             When customer tasks trigger your approved agent endpoints, live telemetry records will populate here in real time.
           </p>
         </div>
       ) : (
-        <div className="rounded-3xl bg-[#0F1626] border border-slate-800 overflow-hidden">
+        <div className="rounded-3xl bg-[#11141A] border border-white/[0.08] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900/60 text-slate-400 font-mono border-b border-slate-800 uppercase text-[10px]">
+              <thead className="bg-[#0D0F14] text-[#9CA3AF] font-mono border-b border-white/[0.08] uppercase text-[10px]">
                 <tr>
                   <th className="py-3 px-4">Agent & Action</th>
                   <th className="py-3 px-4">Task ID</th>
@@ -161,14 +161,14 @@ export const DeveloperExecutionsPage: React.FC<{ onNavigate: (screen: string) =>
                   <th className="py-3 px-4 text-right">Payload</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-white/[0.04]">
                 {filteredTraces.map((trace) => (
-                  <tr key={trace.id} className="hover:bg-slate-900/40 transition-colors">
+                  <tr key={trace.id} className="hover:bg-[#171A22]/50 transition-colors">
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-white">{trace.agent_name}</div>
+                      <div className="font-bold text-[#F3F4F6]">{trace.agent_name}</div>
                       <div className="text-[10px] font-mono text-slate-500 mt-0.5">{trace.action_type}</div>
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-400 text-[11px]">
+                    <td className="py-3.5 px-4 font-mono text-[#9CA3AF] text-[11px]">
                       {trace.task_id.slice(0, 8)}...
                     </td>
                     <td className="py-3.5 px-4 font-mono text-slate-300">
@@ -222,7 +222,7 @@ export const DeveloperExecutionsPage: React.FC<{ onNavigate: (screen: string) =>
                           playClick();
                           setSelectedTrace(trace);
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 font-mono text-[10px] transition-colors"
+                        className="px-2.5 py-1 rounded-lg bg-[#171A22] hover:bg-[#1e222d] text-[#819BFF] border border-white/[0.08] font-mono text-[10px] transition-colors"
                       >
                         Inspect
                       </button>
@@ -238,29 +238,29 @@ export const DeveloperExecutionsPage: React.FC<{ onNavigate: (screen: string) =>
       {/* PAYLOAD INSPECTOR MODAL */}
       {selectedTrace && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="relative w-full max-w-2xl rounded-3xl bg-[#0F1626] border border-cyan-500/30 p-6 sm:p-8 space-y-6 shadow-2xl">
+          <div className="relative w-full max-w-2xl rounded-3xl bg-[#11141A] border border-cyan-500/30 p-6 sm:p-8 space-y-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 text-[10px] font-mono border border-cyan-500/20 mb-1">
                   <span>Execution ID: {selectedTrace.id}</span>
                 </div>
-                <h3 className="text-xl font-bold text-white">{selectedTrace.agent_name}</h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <h3 className="text-xl font-bold text-[#F3F4F6]">{selectedTrace.agent_name}</h3>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">
                   Action: {selectedTrace.action_type} • Recorded at {new Date(selectedTrace.created_at).toLocaleString()}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedTrace(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#171A22] transition-colors"
               >
                 ✕
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 p-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs font-mono">
+            <div className="grid grid-cols-3 gap-3 p-3 rounded-2xl bg-[#0D0F14] border border-white/[0.08] text-xs font-mono">
               <div>
                 <span className="text-slate-500 text-[10px] block">Latency:</span>
-                <span className="text-white font-bold">{selectedTrace.latency_ms} ms</span>
+                <span className="text-[#F3F4F6] font-bold">{selectedTrace.latency_ms} ms</span>
               </div>
               <div>
                 <span className="text-slate-500 text-[10px] block">Seller Net (90%):</span>
@@ -277,7 +277,7 @@ export const DeveloperExecutionsPage: React.FC<{ onNavigate: (screen: string) =>
             {/* Input Payload */}
             <div className="space-y-2">
               <span className="text-xs font-semibold text-slate-300">Input Payload (Received from Buyer Agent):</span>
-              <pre className="p-3.5 rounded-xl bg-[#080C14] border border-slate-800 text-slate-300 font-mono text-[10px] overflow-x-auto max-h-40">
+              <pre className="p-3.5 rounded-xl bg-[#08090C] border border-white/[0.08] text-slate-300 font-mono text-[10px] overflow-x-auto max-h-40">
                 {JSON.stringify(selectedTrace.input_payload || {}, null, 2)}
               </pre>
             </div>
@@ -285,13 +285,13 @@ export const DeveloperExecutionsPage: React.FC<{ onNavigate: (screen: string) =>
             {/* Output Payload */}
             <div className="space-y-2">
               <span className="text-xs font-semibold text-slate-300">Output Payload (Returned by Your Agent):</span>
-              <pre className="p-3.5 rounded-xl bg-[#080C14] border border-slate-800 text-emerald-300 font-mono text-[10px] overflow-x-auto max-h-48">
+              <pre className="p-3.5 rounded-xl bg-[#08090C] border border-white/[0.08] text-emerald-300 font-mono text-[10px] overflow-x-auto max-h-48">
                 {JSON.stringify(selectedTrace.output_payload || {}, null, 2)}
               </pre>
             </div>
 
             {selectedTrace.tx_hash && (
-              <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
+              <div className="flex items-center justify-between text-xs text-[#9CA3AF] pt-2 border-t border-white/[0.08]">
                 <span>Base Sepolia Settlement:</span>
                 <a
                   href={`https://sepolia.basescan.org/tx/${selectedTrace.tx_hash}`}

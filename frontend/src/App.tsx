@@ -44,13 +44,22 @@ const AppContent: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<string>('landing');
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
-  // Developer access request modal state
   const [isDevModalOpen, setIsDevModalOpen] = useState(false);
   const [devOrg, setDevOrg] = useState('');
   const [devReason, setDevReason] = useState('Publish high-availability intelligence agents');
   const [devRequestLoading, setDevRequestLoading] = useState(false);
   const [devRequestSuccess, setDevRequestSuccess] = useState(false);
   const [devRequestError, setDevRequestError] = useState<string | null>(null);
+
+  // Initial startup entrance animation flag (only runs once on website launch)
+  const [isInitialMount, setIsInitialMount] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialMount(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   // If user signs in, navigate automatically to their role's overview if on landing/auth
   useEffect(() => {
@@ -121,26 +130,27 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#080C14] text-slate-100 selection:bg-indigo-500 selection:text-white">
+    <div className={`min-h-screen flex flex-col bg-[#08090C] text-[#F3F4F6] selection:bg-[#819BFF]/30 selection:text-white transition-colors duration-500 ${isInitialMount ? 'animate-entrance-bg' : ''}`}>
       <Navbar
         onNavigate={handleNavigate}
         onRequestDeveloperModal={() => setIsDevModalOpen(true)}
+        isInitialMount={isInitialMount}
       />
 
       <main className="flex-1 flex flex-col">
         {/* Public Screens */}
-        {currentScreen === 'landing' && <LandingPage onNavigate={handleNavigate} />}
+        {currentScreen === 'landing' && <LandingPage onNavigate={handleNavigate} isInitialMount={isInitialMount} />}
         {currentScreen === 'auth' && <AuthPage onNavigate={handleNavigate} />}
 
         {/* Live Execution & Results Screens (Available to all roles when reviewing a task) */}
         {currentScreen === 'live_execution' && (
-          <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 w-full">
+          <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 w-full animate-fade-in">
             <LiveExecutionPage taskId={activeTaskId} onNavigate={handleNavigate} />
           </div>
         )}
 
         {currentScreen === 'results' && (
-          <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 w-full">
+          <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 w-full animate-fade-in">
             <ResultsPage taskId={activeTaskId} onNavigate={handleNavigate} />
           </div>
         )}
@@ -193,11 +203,11 @@ const AppContent: React.FC = () => {
 
       {/* DEVELOPER ONBOARDING REQUEST MODAL */}
       {isDevModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md rounded-3xl bg-[#0F1626] border border-indigo-500/30 p-6 sm:p-8 space-y-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+          <div className="relative w-full max-w-md rounded-3xl bg-[#11141A] border border-white/[0.08] p-6 sm:p-8 space-y-6 shadow-card-elevated">
             <button
               onClick={() => setIsDevModalOpen(false)}
-              className="absolute top-6 right-6 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+              className="absolute top-6 right-6 p-1.5 rounded-lg text-[#9CA3AF] hover:text-white hover:bg-[#171A22] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -208,18 +218,18 @@ const AppContent: React.FC = () => {
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-white">Developer Access Granted!</h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[#9CA3AF]">
                   Your account has been upgraded to Developer Studio. Refreshing workspace...
                 </p>
               </div>
             ) : (
               <form onSubmit={handleSubmitDevRequest} className="space-y-4">
-                <div className="flex items-center gap-2 text-indigo-400 text-xs font-mono font-bold">
+                <div className="flex items-center gap-2 text-[#819BFF] text-xs font-mono font-bold">
                   <Code className="w-4 h-4" />
                   <span>Developer Onboarding</span>
                 </div>
                 <h3 className="text-xl font-bold text-white">Request Developer Privileges</h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[#9CA3AF]">
                   Developer accounts can register agent endpoints, configure HTTP 402 payment requirements, and collect 90% net seller revenue.
                 </p>
 
@@ -237,7 +247,7 @@ const AppContent: React.FC = () => {
                     placeholder="e.g. Autonomous AI Labs"
                     value={devOrg}
                     onChange={(e) => setDevOrg(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C14] border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0D0F14] border border-white/[0.08] text-[#F3F4F6] placeholder:text-[#9CA3AF]/60 text-xs focus:outline-none focus:border-[#819BFF]/60 transition-colors"
                   />
                 </div>
 
@@ -247,7 +257,7 @@ const AppContent: React.FC = () => {
                     rows={3}
                     value={devReason}
                     onChange={(e) => setDevReason(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C14] border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0D0F14] border border-white/[0.08] text-[#F3F4F6] placeholder:text-[#9CA3AF]/60 text-xs focus:outline-none focus:border-[#819BFF]/60 transition-colors"
                     required
                   />
                 </div>
@@ -255,7 +265,7 @@ const AppContent: React.FC = () => {
                 <button
                   type="submit"
                   disabled={devRequestLoading}
-                  className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-glow-accent transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs shadow-glow-accent transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {devRequestLoading ? (
                     <>

@@ -30,7 +30,7 @@ tasksRouter.post('/plan', async (req: Request, res: Response) => {
 // POST /api/tasks - Create a new task with budget limit
 tasksRouter.post('/', async (req: Request, res: Response) => {
   try {
-    const { description, budgetLimit, title, userId } = req.body;
+    const { description, budgetLimit, title, userId, plan: clientPlan } = req.body;
     if (!description || typeof description !== 'string') {
       res.status(400).json({ error: 'Description is required' });
       return;
@@ -41,7 +41,11 @@ tasksRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const plan = await buyerAgent.planTask(description, budget);
+    let plan = clientPlan;
+    if (!plan || !plan.canExecute || !plan.steps || plan.steps.length === 0) {
+      plan = await buyerAgent.planTask(description, budget);
+    }
+
     if (!plan.canExecute) {
       res.status(400).json({
         error: 'Budget Insufficient',

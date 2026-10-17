@@ -141,19 +141,19 @@ export const SubmitAgentPage: React.FC<SubmitAgentPageProps> = ({ onNavigate }) 
           playClick();
           onNavigate('developer_dashboard');
         }}
-        className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors"
+        className="text-xs text-[#9CA3AF] hover:text-[#F3F4F6] flex items-center gap-1.5 transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to Developer Studio
       </button>
 
       <div>
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-mono mb-2 border border-indigo-500/20">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 text-[#819BFF] text-xs font-mono mb-2 border border-indigo-500/20">
           <Code2 className="w-3.5 h-3.5" />
           <span>New Agent Onboarding</span>
         </div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Submit Agent for Review</h1>
-        <p className="text-xs text-slate-400 mt-1">
+        <h1 className="text-3xl font-extrabold text-[#F3F4F6] tracking-tight">Submit Agent for Review</h1>
+        <p className="text-xs text-[#9CA3AF] mt-1">
           Provide endpoint details, schemas, and payment recipient for admin verification.
         </p>
       </div>
@@ -175,7 +175,7 @@ export const SubmitAgentPage: React.FC<SubmitAgentPageProps> = ({ onNavigate }) 
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-6">
+      <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-3xl bg-[#11141A] border border-white/[0.08] card-interactive space-y-6">
         {/* Name & Category */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -186,7 +186,7 @@ export const SubmitAgentPage: React.FC<SubmitAgentPageProps> = ({ onNavigate }) 
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. DeFi Yield Oracle"
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              className="w-full bg-[#0D0F14] border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-[#F3F4F6] placeholder-[#9CA3AF]/60 focus:outline-none focus:border-[#819BFF]"
             />
           </div>
 
@@ -195,7 +195,7 @@ export const SubmitAgentPage: React.FC<SubmitAgentPageProps> = ({ onNavigate }) 
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as any)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="w-full bg-[#0D0F14] border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-[#F3F4F6] focus:outline-none focus:border-[#819BFF]"
             >
               <option value="Data">Data (Structured retrieval / feeds)</option>
               <option value="Inference">Inference (LLM reasoning / synthesis)</option>
@@ -213,7 +213,7 @@ export const SubmitAgentPage: React.FC<SubmitAgentPageProps> = ({ onNavigate }) 
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe what tasks this agent performs, reliability guarantees, and supported parameters..."
-            className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className="w-full bg-[#0D0F14] border border-white/[0.08] rounded-xl p-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF]/60 focus:outline-none focus:border-[#819BFF]"
           />
         </div>
 
@@ -229,13 +229,13 @@ export const SubmitAgentPage: React.FC<SubmitAgentPageProps> = ({ onNavigate }) 
               value={endpointUrl}
               onChange={(e) => setEndpointUrl(e.target.value)}
               placeholder="http://localhost:5000/api/agents/data or https://api.yourservice.com/v1"
-              className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono text-[11px]"
+              className="flex-1 bg-[#0D0F14] border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-[#F3F4F6] placeholder-[#9CA3AF]/60 focus:outline-none focus:border-[#819BFF] font-mono text-[11px]"
             />
             <button
               type="button"
               onClick={handleTestEndpoint}
               disabled={testingEndpoint || !endpointUrl}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold shrink-0 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl bg-[#171A22] hover:bg-[#1e222d] text-slate-200 text-xs font-semibold shrink-0 border border-white/[0.08] transition-colors flex items-center gap-1.5 disabled:opacity-50"
             >
               <Activity className="w-3.5 h-3.5 text-cyan-400" />
               {testingEndpoint ? 'Testing...' : 'Test Endpoint'}
@@ -278,7 +278,7 @@ export const SubmitAgentPage: React.FC<SubmitAgentPageProps> = ({ onNavigate }) 
               required
               value={priceUsdc}
               onChange={(e) => setPriceUsdc(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
+              className="w-full bg-[#0D0F14] border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-[#F3F4F6] font-mono focus:outline-none focus:border-[#819BFF]"
             />
             <span className="text-[10px] text-slate-500 mt-1 block">Configurable cap: 0.50 USDC</span>
           </div>
@@ -293,7 +293,7 @@ export const SubmitAgentPage: React.FC<SubmitAgentPageProps> = ({ onNavigate }) 
               value={recipientAddress}
               onChange={(e) => setRecipientAddress(e.target.value)}
               placeholder="0x..."
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white font-mono text-[11px] focus:outline-none focus:border-indigo-500"
+              className="w-full bg-[#0D0F14] border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-[#F3F4F6] font-mono text-[11px] focus:outline-none focus:border-[#819BFF]"
             />
           </div>
         </div>
@@ -308,7 +308,7 @@ export const SubmitAgentPage: React.FC<SubmitAgentPageProps> = ({ onNavigate }) 
             value={capabilities}
             onChange={(e) => setCapabilities(e.target.value)}
             placeholder="market_feed, crypto_rates, normalized_json"
-            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono text-[11px]"
+            className="w-full bg-[#0D0F14] border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs text-[#F3F4F6] placeholder-[#9CA3AF]/60 focus:outline-none focus:border-[#819BFF] font-mono text-[11px]"
           />
         </div>
 
@@ -322,7 +322,7 @@ export const SubmitAgentPage: React.FC<SubmitAgentPageProps> = ({ onNavigate }) 
               rows={6}
               value={inputSchemaText}
               onChange={(e) => setInputSchemaText(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-300 font-mono focus:outline-none focus:border-indigo-500"
+              className="w-full bg-[#0D0F14] border border-white/[0.08] rounded-xl p-3 text-[11px] text-slate-300 font-mono focus:outline-none focus:border-[#819BFF]"
             />
           </div>
 
@@ -334,7 +334,7 @@ export const SubmitAgentPage: React.FC<SubmitAgentPageProps> = ({ onNavigate }) 
               rows={6}
               value={outputSchemaText}
               onChange={(e) => setOutputSchemaText(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-300 font-mono focus:outline-none focus:border-indigo-500"
+              className="w-full bg-[#0D0F14] border border-white/[0.08] rounded-xl p-3 text-[11px] text-slate-300 font-mono focus:outline-none focus:border-[#819BFF]"
             />
           </div>
         </div>
@@ -342,7 +342,7 @@ export const SubmitAgentPage: React.FC<SubmitAgentPageProps> = ({ onNavigate }) 
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-glow-accent transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-[#819BFF] hover:opacity-95 text-[#F3F4F6] font-bold text-xs shadow-glow-blue transition-all flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Send className="w-4 h-4" />
           <span>{submitting ? 'Submitting to Admin Queue...' : 'Submit Agent for Admin Review'}</span>

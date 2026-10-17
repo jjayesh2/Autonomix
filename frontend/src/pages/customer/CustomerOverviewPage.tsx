@@ -55,9 +55,9 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
   const successRate = tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 100;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Top Banner / Welcome */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#0F1626] to-[#0A101D] border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#11141A] to-[#171A22] border border-white/[0.08] shadow-card-elevated flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-mono mb-2 border border-cyan-500/20">
             <Sparkles className="w-3.5 h-3.5" />
@@ -66,7 +66,7 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             Welcome back, {user?.displayName}
           </h1>
-          <p className="text-xs text-slate-400 mt-1 max-w-xl">
+          <p className="text-xs text-[#9CA3AF] mt-1 max-w-xl">
             Orchestrate multi-agent workflows, deploy verified sub-services, and settle micro-calls on Base Sepolia.
           </p>
         </div>
@@ -76,7 +76,7 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
             playClick();
             onNavigate('create_task');
           }}
-          className="self-start md:self-auto px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-glow-accent transition-all flex items-center gap-2"
+          className="self-start md:self-auto px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-[#819BFF] hover:from-indigo-500 hover:to-[#819BFF] text-white font-bold text-xs shadow-glow-accent transition-all flex items-center gap-2 transform hover:-translate-y-0.5"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Launch New Task</span>
@@ -85,8 +85,8 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
 
       {/* Operational Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-[#0F1626] border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
+        <div className="p-5 rounded-2xl bg-[#11141A] border border-white/[0.08] hover:border-white/[0.16] card-interactive">
+          <div className="flex items-center justify-between text-[#9CA3AF] mb-2">
             <span className="text-xs font-medium">Available Task Balance</span>
             <Coins className="w-4 h-4 text-emerald-400" />
           </div>
@@ -96,8 +96,8 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
           <div className="mt-1 text-[11px] text-slate-500 font-mono">Base Sepolia Testnet</div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#0F1626] border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
+        <div className="p-5 rounded-2xl bg-[#11141A] border border-white/[0.08] hover:border-white/[0.16] card-interactive">
+          <div className="flex items-center justify-between text-[#9CA3AF] mb-2">
             <span className="text-xs font-medium">Total Spending</span>
             <TrendingUp className="w-4 h-4 text-cyan-400" />
           </div>
@@ -107,12 +107,12 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
           <div className="mt-1 text-[11px] text-slate-500 font-mono">Across {tasks.length} tasks</div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#0F1626] border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
+        <div className="p-5 rounded-2xl bg-[#11141A] border border-white/[0.08] hover:border-white/[0.16] card-interactive">
+          <div className="flex items-center justify-between text-[#9CA3AF] mb-2">
             <span className="text-xs font-medium">Executing Now</span>
-            <Activity className="w-4 h-4 text-indigo-400" />
+            <Activity className="w-4 h-4 text-[#819BFF]" />
           </div>
-          <div className="text-2xl font-extrabold font-mono text-indigo-400">
+          <div className="text-2xl font-extrabold font-mono text-[#819BFF]">
             {activeTasks.length}
           </div>
           <div className="mt-1 text-[11px] text-slate-500 font-mono">
@@ -120,8 +120,8 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#0F1626] border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
+        <div className="p-5 rounded-2xl bg-[#11141A] border border-white/[0.08] hover:border-white/[0.16] card-interactive">
+          <div className="flex items-center justify-between text-[#9CA3AF] mb-2">
             <span className="text-xs font-medium">Task Success Rate</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           </div>
@@ -135,7 +135,7 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
       {/* Two Column Layout: Recent Tasks & Recommended Agents */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Tasks Table */}
-        <div className="lg:col-span-2 p-6 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-4">
+        <div className="lg:col-span-2 p-6 rounded-3xl bg-[#11141A] border border-white/[0.08] shadow-card-elevated space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-white uppercase tracking-wider">
               Recent Autonomous Tasks
@@ -145,14 +145,14 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
                 playClick();
                 onNavigate('customer_tasks');
               }}
-              className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+              className="text-xs text-[#819BFF] hover:text-[#9B8AFF] font-semibold transition-colors"
             >
               View All Tasks →
             </button>
           </div>
 
           {tasks.length === 0 ? (
-            <div className="text-center py-12 text-slate-500 text-xs">
+            <div className="text-center py-12 text-[#9CA3AF] text-xs">
               No tasks launched yet. Launch your first task using the button above.
             </div>
           ) : (
@@ -164,7 +164,7 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
                     playClick();
                     onSelectTask(task.id);
                   }}
-                  className="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  className="p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] hover:border-white/[0.16] card-interactive cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
                         {task.status}
                       </span>
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1 font-mono">
+                    <div className="text-[11px] text-[#9CA3AF] mt-1 font-mono">
                       {new Date(task.created_at).toLocaleString()} • Budget: {task.budget_limit.toFixed(2)} USDC
                     </div>
                   </div>
@@ -192,7 +192,7 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
                     <span className="font-mono text-emerald-400 text-xs font-bold">
                       {task.total_cost.toFixed(2)} USDC
                     </span>
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-500" />
+                    <ArrowRight className="w-3.5 h-3.5 text-[#9CA3AF]" />
                   </div>
                 </div>
               ))}
@@ -201,7 +201,7 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
         </div>
 
         {/* Recommended Approved Agents */}
-        <div className="p-6 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-4">
+        <div className="p-6 rounded-3xl bg-[#11141A] border border-white/[0.08] shadow-card-elevated space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-white uppercase tracking-wider">
               Marketplace Agents
@@ -211,7 +211,7 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
                 playClick();
                 onNavigate('marketplace');
               }}
-              className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+              className="text-xs text-[#819BFF] hover:text-[#9B8AFF] font-semibold transition-colors"
             >
               Browse →
             </button>
@@ -225,7 +225,7 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
                   playClick();
                   onNavigate('marketplace');
                 }}
-                className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 cursor-pointer transition-all space-y-1.5"
+                className="p-3.5 rounded-2xl bg-[#0D0F14] border border-white/[0.08] hover:border-white/[0.16] card-interactive cursor-pointer transition-all space-y-1.5"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-white truncate max-w-[150px]">
@@ -235,7 +235,7 @@ export const CustomerOverviewPage: React.FC<CustomerOverviewPageProps> = ({ onNa
                     {agent.price_usdc.toFixed(2)} USDC
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 line-clamp-1">{agent.description}</p>
+                <p className="text-[11px] text-[#9CA3AF] line-clamp-1">{agent.description}</p>
                 <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 pt-1">
                   <span>★ {agent.metrics?.rating_average ? agent.metrics.rating_average.toFixed(1) : '5.0'}</span>
                   <span>~{agent.metrics?.median_latency_ms || 200}ms</span>

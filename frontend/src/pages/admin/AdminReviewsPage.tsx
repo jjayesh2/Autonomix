@@ -78,18 +78,18 @@ export const AdminReviewsPage: React.FC<{ onNavigate: (screen: string) => void }
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-400 text-xs font-mono mb-2 border border-violet-500/20">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/10 text-[#9B8AFF] text-xs font-mono mb-2 border border-violet-500/20">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Agent Safety & Integrity Verification</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Review Queue</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-3xl font-extrabold text-[#F3F4F6] tracking-tight">Review Queue</h1>
+          <p className="text-xs text-[#9CA3AF] mt-1">
             Validate developer endpoints against SSRF rules, verify JSON schemas, and authorize agents for the public marketplace.
           </p>
         </div>
 
         {pendingCount > 0 && (
-          <span className="self-start sm:self-auto px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-400 font-mono text-xs font-bold flex items-center gap-2">
+          <span className="self-start sm:self-auto px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/30 text-[#9B8AFF] font-mono text-xs font-bold flex items-center gap-2">
             <AlertTriangle className="w-3.5 h-3.5" />
             <span>{pendingCount} Pending Approval</span>
           </span>
@@ -97,20 +97,20 @@ export const AdminReviewsPage: React.FC<{ onNavigate: (screen: string) => void }
       </div>
 
       {loading ? (
-        <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-3">
-          <Loader2 className="w-6 h-6 animate-spin text-violet-400" />
+        <div className="p-12 text-center text-[#9CA3AF] flex flex-col items-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin text-[#9B8AFF]" />
           <span className="text-xs">Loading submission queue...</span>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Submissions List */}
           <div className="lg:col-span-1 space-y-3">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block px-1">
+            <span className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider block px-1">
               Submissions ({submissions.length})
             </span>
 
             {submissions.length === 0 ? (
-              <div className="p-6 rounded-2xl bg-[#0F1626] border border-slate-800 text-center text-xs text-slate-400">
+              <div className="p-6 rounded-2xl bg-[#11141A] border border-white/[0.08] text-center text-xs text-[#9CA3AF]">
                 No submissions found.
               </div>
             ) : (
@@ -126,12 +126,12 @@ export const AdminReviewsPage: React.FC<{ onNavigate: (screen: string) => void }
                     }}
                     className={`w-full text-left p-4 rounded-2xl border transition-all ${
                       isSelected
-                        ? 'bg-slate-900 border-violet-500 shadow-glow-violet'
-                        : 'bg-[#0F1626] border-slate-800 hover:border-slate-700'
+                        ? 'bg-[#171A22] border-violet-500 shadow-glow-violet'
+                        : 'bg-[#11141A] border-white/[0.08] hover:border-white/[0.16]'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold text-white truncate max-w-[160px]">{sub.name}</span>
+                      <span className="text-xs font-bold text-[#F3F4F6] truncate max-w-[160px]">{sub.name}</span>
                       <span
                         className={`px-2 py-0.5 rounded text-[9px] font-mono uppercase font-bold ${
                           sub.status === 'approved'
@@ -144,8 +144,8 @@ export const AdminReviewsPage: React.FC<{ onNavigate: (screen: string) => void }
                         {sub.status}
                       </span>
                     </div>
-                    <div className="text-[11px] text-slate-400 truncate">{sub.description}</div>
-                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mt-2 pt-2 border-t border-slate-800/60">
+                    <div className="text-[11px] text-[#9CA3AF] truncate">{sub.description}</div>
+                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mt-2 pt-2 border-t border-white/[0.06]">
                       <span>{sub.category}</span>
                       <span className="text-emerald-400 font-bold">{sub.price_usdc.toFixed(2)} USDC</span>
                     </div>
@@ -158,19 +158,19 @@ export const AdminReviewsPage: React.FC<{ onNavigate: (screen: string) => void }
           {/* Submission Details & Action Panel */}
           <div className="lg:col-span-2">
             {selectedSub ? (
-              <div className="p-6 sm:p-8 rounded-3xl bg-[#0F1626] border border-slate-800 space-y-6">
+              <div className="p-6 sm:p-8 rounded-3xl bg-[#11141A] border border-white/[0.08] card-interactive space-y-6">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h2 className="text-xl font-bold text-white">{selectedSub.name}</h2>
-                    <span className="px-2.5 py-0.5 rounded text-[10px] font-mono uppercase bg-slate-800 text-slate-300">
+                    <h2 className="text-xl font-bold text-[#F3F4F6]">{selectedSub.name}</h2>
+                    <span className="px-2.5 py-0.5 rounded text-[10px] font-mono uppercase bg-[#171A22] text-[#9CA3AF] border border-white/[0.06]">
                       {selectedSub.category}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400">{selectedSub.description}</p>
+                  <p className="text-xs text-[#9CA3AF]">{selectedSub.description}</p>
                 </div>
 
                 {/* Metadata Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800 text-xs font-mono">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[#0D0F14] border border-white/[0.08] text-xs font-mono">
                   <div>
                     <span className="text-slate-500 text-[10px] block">Endpoint URL (SSRF Protected):</span>
                     <span className="text-slate-200 truncate block mt-0.5">{selectedSub.endpoint_url}</span>
@@ -196,7 +196,7 @@ export const AdminReviewsPage: React.FC<{ onNavigate: (screen: string) => void }
                     {selectedSub.capabilities?.map((c, i) => (
                       <span
                         key={i}
-                        className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300"
+                        className="px-2.5 py-1 rounded-xl bg-[#0D0F14] border border-white/[0.08] text-xs font-mono text-[#9CA3AF]"
                       >
                         {c}
                       </span>
@@ -208,13 +208,13 @@ export const AdminReviewsPage: React.FC<{ onNavigate: (screen: string) => void }
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <span className="text-xs font-semibold text-slate-300 block mb-1">Input Schema (JSON):</span>
-                    <pre className="p-3.5 rounded-xl bg-[#080C14] border border-slate-800 text-slate-300 text-[10px] font-mono overflow-x-auto max-h-40">
+                    <pre className="p-3.5 rounded-xl bg-[#08090C] border border-white/[0.08] text-slate-300 text-[10px] font-mono overflow-x-auto max-h-40">
                       {JSON.stringify(selectedSub.input_schema, null, 2)}
                     </pre>
                   </div>
                   <div>
                     <span className="text-xs font-semibold text-slate-300 block mb-1">Output Schema (JSON):</span>
-                    <pre className="p-3.5 rounded-xl bg-[#080C14] border border-slate-800 text-emerald-400 text-[10px] font-mono overflow-x-auto max-h-40">
+                    <pre className="p-3.5 rounded-xl bg-[#08090C] border border-white/[0.08] text-emerald-400 text-[10px] font-mono overflow-x-auto max-h-40">
                       {JSON.stringify(selectedSub.output_schema, null, 2)}
                     </pre>
                   </div>
@@ -229,8 +229,8 @@ export const AdminReviewsPage: React.FC<{ onNavigate: (screen: string) => void }
                 )}
 
                 {/* Actions Section */}
-                <div className="pt-4 border-t border-slate-800 space-y-4">
-                  <span className="text-xs font-bold text-white uppercase tracking-wider block">Admin Verdict</span>
+                <div className="pt-4 border-t border-white/[0.08] space-y-4">
+                  <span className="text-xs font-bold text-[#F3F4F6] uppercase tracking-wider block">Admin Verdict</span>
 
                   <div className="flex flex-wrap gap-3">
                     <button
@@ -243,7 +243,7 @@ export const AdminReviewsPage: React.FC<{ onNavigate: (screen: string) => void }
 
                     <button
                       onClick={() => handleReviewAction('suspend')}
-                      className="px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-slate-600 text-slate-300 font-semibold text-xs transition-colors flex items-center gap-2"
+                      className="px-4 py-2.5 rounded-xl bg-[#0D0F14] border border-white/[0.08] hover:bg-[#171A22] text-[#9CA3AF] hover:text-[#F3F4F6] font-semibold text-xs transition-colors flex items-center gap-2"
                     >
                       <PauseCircle className="w-4 h-4 text-amber-400" />
                       <span>Suspend Agent</span>
@@ -252,7 +252,7 @@ export const AdminReviewsPage: React.FC<{ onNavigate: (screen: string) => void }
 
                   {/* Rejection field */}
                   <div className="space-y-2 pt-2">
-                    <label className="text-xs text-slate-400 block">
+                    <label className="text-xs text-[#9CA3AF] block">
                       Rejection Reason (Mandatory if rejecting submission):
                     </label>
                     <div className="flex gap-2">
@@ -261,7 +261,7 @@ export const AdminReviewsPage: React.FC<{ onNavigate: (screen: string) => void }
                         placeholder="e.g. Output schema does not match RFC specifications..."
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
-                        className="flex-1 px-3.5 py-2 rounded-xl bg-[#080C14] border border-slate-800 text-white text-xs focus:outline-none focus:border-rose-500 font-mono"
+                        className="flex-1 px-3.5 py-2 rounded-xl bg-[#08090C] border border-white/[0.08] text-[#F3F4F6] placeholder-[#9CA3AF]/60 text-xs focus:outline-none focus:border-rose-500 font-mono"
                       />
                       <button
                         onClick={() => handleReviewAction('reject')}
@@ -275,7 +275,7 @@ export const AdminReviewsPage: React.FC<{ onNavigate: (screen: string) => void }
                 </div>
               </div>
             ) : (
-              <div className="p-12 rounded-3xl bg-[#0F1626] border border-slate-800 text-center text-xs text-slate-400">
+              <div className="p-12 rounded-3xl bg-[#11141A] border border-white/[0.08] text-center text-xs text-[#9CA3AF]">
                 Select a submission from the list to review details.
               </div>
             )}

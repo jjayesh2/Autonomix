@@ -3,10 +3,11 @@ import { db } from '../db/supabase.js';
 import { budgetGuard } from '../payments/budgetGuard.js';
 import { x402Engine, X402PaymentRequirement } from '../payments/x402Protocol.js';
 import { validateSchema } from '../utils/schemaValidator.js';
-import { Agent, Task, TaskStep, Transaction } from '../db/types.js';
+import { Agent, Task, TaskStep, Transaction, TaskStatus } from '../db/types.js';
 import { aiService } from '../ai/aiService.js';
 import { TokenUsage } from '../ai/types.js';
 import { config } from '../config/index.js';
+import { parseProductSearchIntent } from '../utils/productSearchParser.js';
 
 export interface PlannedStep {
   stepNumber: number;
@@ -70,6 +71,116 @@ export function rankAgents(candidates: Agent[]): Agent[] {
   });
 }
 
+/**
+ * Strict Task Acceptance Evaluation
+ * Ensures HTTP 200 or paid calls alone do not mark a task completed unless acceptance criteria are met.
+ */
+export function evaluateTaskAcceptance(
+  taskGoal: string,
+  executedSteps: Array<{ step: PlannedStep; success: boolean; output?: any; agentUsed: Agent }>
+): { status: TaskStatus; summary: string; isAcceptable: boolean } {
+  const isExplicitEmptyTest = /nonexistent|empty\s+(result|search)|verify\s+empty/i.test(taskGoal);
+  const isProductTask = /shoe|laptop|phone|watch|product|item|catalog|buy|find|search|hardware|ecommerce/i.test(taskGoal);
+  const isCryptoTask = /eth|btc|crypto|oracle|market\s+price|ticker/i.test(taskGoal);
+
+  const successfulSteps = executedSteps.filter((s) => s.success && s.output);
+
+  // Explicit empty search test verification
+  if (isExplicitEmptyTest) {
+    let totalItems = 0;
+    for (const s of executedSteps) {
+      if (Array.isArray(s.output?.products)) totalItems += s.output.products.length;
+      if (Array.isArray(s.output?.items)) totalItems += s.output.items.length;
+    }
+    if (totalItems === 0) {
+      return {
+        status: 'completed',
+        summary: 'Explicit empty search test verified successfully (0 products returned as expected).',
+        isAcceptable: true,
+      };
+    }
+  }
+
+  // 1. Product Research Acceptance Criteria
+  if (isProductTask) {
+    let totalProductsFound = 0;
+    for (const s of executedSteps) {
+      if (Array.isArray(s.output?.products)) totalProductsFound += s.output.products.length;
+      if (Array.isArray(s.output?.items)) totalProductsFound += s.output.items.length;
+    }
+
+    if (totalProductsFound === 0) {
+      // No products found!
+      if (successfulSteps.length > 0) {
+        return {
+          status: 'partially_completed',
+          summary: `Task completed service calls but failed product acceptance criteria: 0 matching products found in catalog for '${taskGoal}'.`,
+          isAcceptable: false,
+        };
+      }
+      return {
+        status: 'failed',
+        summary: `Product discovery failed: No matching products found in catalog for '${taskGoal}'.`,
+        isAcceptable: false,
+      };
+    }
+
+    // Products were found
+    if (successfulSteps.length === executedSteps.length) {
+      return {
+        status: 'completed',
+        summary: `Task completed successfully: Discovered and verified ${totalProductsFound} relevant product records matching criteria.`,
+        isAcceptable: true,
+      };
+    } else if (successfulSteps.length > 0) {
+      return {
+        status: 'partially_completed',
+        summary: `Task partially completed: Retrieved ${totalProductsFound} product records, but some pipeline steps encountered issues.`,
+        isAcceptable: true,
+      };
+    } else {
+      return {
+        status: 'failed',
+        summary: `Product discovery failed: Step executions failed.`,
+        isAcceptable: false,
+      };
+    }
+  }
+
+  // 2. Crypto / Market Oracle Acceptance Criteria
+  if (isCryptoTask) {
+    const oracleStep = executedSteps.find((s) => s.output?.price_usd !== undefined && s.output.price_usd > 0);
+    if (!oracleStep && !isExplicitEmptyTest) {
+      return {
+        status: 'failed',
+        summary: 'Market oracle task failed acceptance criteria: No valid price quote returned.',
+        isAcceptable: false,
+      };
+    }
+  }
+
+  // 3. General Tasks Acceptance Criteria
+  if (successfulSteps.length === executedSteps.length) {
+    return {
+      status: 'completed',
+      summary: `Task executed successfully: ${successfulSteps.length}/${executedSteps.length} steps succeeded.`,
+      isAcceptable: true,
+    };
+  } else if (successfulSteps.length > 0) {
+    return {
+      status: 'partially_completed',
+      summary: `Task partially completed: ${successfulSteps.length}/${executedSteps.length} steps succeeded.`,
+      isAcceptable: true,
+    };
+  } else {
+    return {
+      status: 'failed',
+      summary: `Task execution failed: All ${executedSteps.length} steps failed.`,
+      isAcceptable: false,
+    };
+  }
+}
+
 export class BuyerAgentOrchestrator {
   /**
    * Analyzes user task description using Google Gemini / AI Service,
@@ -118,13 +229,29 @@ export class BuyerAgentOrchestrator {
       const cost = matchedAgent.price_usdc;
       runningServiceCost += cost;
 
+      let inputPayload = stepItem.inputPayload ? { ...stepItem.inputPayload } : {};
+      const intent = parseProductSearchIntent(description);
+      if (matchedAgent.category === 'Data' && !intent.isCrypto) {
+        if (!inputPayload.query || inputPayload.query === description || /under|below|less than|<=/i.test(inputPayload.query)) {
+          inputPayload.query = intent.cleanKeyword;
+          if (intent.maxPrice !== undefined) inputPayload.maxPrice = intent.maxPrice;
+          if (intent.category) inputPayload.category = intent.category;
+          if (intent.currency) inputPayload.currency = intent.currency;
+        }
+      } else if (matchedAgent.category === 'Scraping') {
+        if (!inputPayload.target || inputPayload.target === description || /under|below|less than|<=/i.test(inputPayload.target)) {
+          inputPayload.target = intent.cleanKeyword;
+          if (intent.maxPrice !== undefined) inputPayload.maxPrice = intent.maxPrice;
+        }
+      }
+
       plannedSteps.push({
         stepNumber: i + 1,
         agent: matchedAgent,
         actionType: stepItem.actionType || `${matchedAgent.category} Service Execution`,
         rationale: stepItem.rationale || `Selected ${matchedAgent.name} based on capability matching and dynamic ranking.`,
         estimatedCost: cost,
-        inputPayload: stepItem.inputPayload || {},
+        inputPayload,
       });
     }
 
@@ -193,6 +320,8 @@ export class BuyerAgentOrchestrator {
     const independentSteps = plan.steps.filter((s) => s.agent.category !== 'Inference');
     const inferenceSteps = plan.steps.filter((s) => s.agent.category === 'Inference');
 
+    const executedStepResults: Array<{ step: PlannedStep; success: boolean; output?: any; agentUsed: Agent }> = [];
+
     // Concurrency: Execute independent steps in parallel (concurrency limit >= 3)
     if (independentSteps.length > 0) {
       const independentResults = await Promise.all(
@@ -206,7 +335,15 @@ export class BuyerAgentOrchestrator {
         )
       );
 
-      for (const res of independentResults) {
+      for (let idx = 0; idx < independentResults.length; idx++) {
+        const res = independentResults[idx];
+        executedStepResults.push({
+          step: independentSteps[idx],
+          success: res.success,
+          output: res.output,
+          agentUsed: res.agentUsed,
+        });
+
         if (res.output) {
           accumulatedContexts.push(
             `Agent [${res.agentUsed.name}] output: ${JSON.stringify(res.output)}`
@@ -225,6 +362,13 @@ export class BuyerAgentOrchestrator {
         approvedAgents,
       });
 
+      executedStepResults.push({
+        step,
+        success: res.success,
+        output: res.output,
+        agentUsed: res.agentUsed,
+      });
+
       if (res.output) {
         accumulatedContexts.push(
           `Agent [${res.agentUsed.name}] output: ${JSON.stringify(res.output)}`
@@ -233,23 +377,21 @@ export class BuyerAgentOrchestrator {
       if (res.success) successfulCount++;
     }
 
-    // Determine final task status
-    const finalStatus =
-      successfulCount === plan.steps.length
-        ? 'completed'
-        : successfulCount > 0
-        ? 'partially_completed'
-        : 'failed';
+    // Determine final task status based on strict acceptance criteria
+    const acceptance = evaluateTaskAcceptance(task.description, executedStepResults);
+    const finalStatus = acceptance.status;
 
     // Store synthesized final results with real AI model details
     await db.createTaskResult({
       id: `res_${taskId}`,
       task_id: taskId,
-      final_summary: `Autonomix Task Orchestration Completed with ${successfulCount}/${plan.steps.length} successful agent service calls paid via HTTP 402 on Base Sepolia.`,
+      final_summary: `${acceptance.summary} (${successfulCount}/${plan.steps.length} successful agent service calls paid via HTTP 402 on Base Sepolia).`,
       structured_output: {
         taskGoal: task.description,
         totalSteps: plan.steps.length,
         successfulSteps: successfulCount,
+        acceptanceStatus: acceptance.status,
+        acceptanceRationale: acceptance.summary,
         aiPlanningModel: plan.aiMetadata?.model || 'Gemini 3.5 Flash-Lite',
         aiPlanningCostUsd: plan.aiMetadata?.costUsd || 0,
         aiPlanningTokens: plan.aiMetadata?.usage?.totalTokens || 0,
@@ -263,6 +405,7 @@ export class BuyerAgentOrchestrator {
 
     const updatedTask = await db.updateTask(taskId, {
       status: finalStatus,
+      rationale: acceptance.summary,
       completed_at: new Date().toISOString(),
     });
 
@@ -380,14 +523,26 @@ export class BuyerAgentOrchestrator {
       await budgetGuard.commitReservation(reservation.reservationId!);
 
       const receipt = resultData.paymentReceipt || {};
-      const txHash = receipt.txHash || receipt.voucherDigest || `0x${Buffer.from(authorization.nonce).toString('hex')}`;
-      const explorerUrl = receipt.explorerUrl || `${config.web3.explorerBaseUrl}/tx/${txHash}`;
+      const txHash = receipt.txHash || undefined;
+      const voucherDigest = receipt.voucherDigest || `0x${Buffer.from(authorization.nonce).toString('hex')}`;
+      const explorerUrl = receipt.explorerUrl || `${config.web3.explorerBaseUrl}/tx/${txHash || voucherDigest}`;
 
       // 7. Validate output against registered agent output schema (Ajv)
       const schemaValidation = validateSchema(currentAgent.output_schema, resultData);
+      const isResultEmpty = resultData.total_found === 0 ||
+        (Array.isArray(resultData.products) && resultData.products.length === 0) ||
+        (Array.isArray(resultData.items) && resultData.items.length === 0);
+
+      const serviceStatus = !schemaValidation.isValid
+        ? 'output_rejected'
+        : isResultEmpty
+        ? 'empty_result'
+        : 'success';
+
+      const platformFee = receipt.platformFeeUsdc || Number((currentAgent.price_usdc * 0.10).toFixed(4));
 
       if (schemaValidation.isValid) {
-        // Record confirmed & successful ledger transaction
+        // Record confirmed ledger transaction
         const txRecord: Transaction = {
           id: `tx_${taskId}_${step.stepNumber}`,
           task_id: taskId,
@@ -398,11 +553,12 @@ export class BuyerAgentOrchestrator {
           token_address: challenge.token || challenge.asset,
           chain_id: challenge.chainId,
           amount_usdc: currentAgent.price_usdc,
-          platform_fee_usdc: receipt.platformFeeUsdc || 0,
+          platform_fee_usdc: platformFee,
           tx_hash: txHash,
+          voucher_digest: voucherDigest,
           explorer_url: explorerUrl,
           payment_status: 'confirmed',
-          service_status: 'success',
+          service_status: serviceStatus,
           idempotency_key: authorization.nonce,
           nonce: authorization.nonce,
           created_at: new Date().toISOString(),
@@ -410,13 +566,51 @@ export class BuyerAgentOrchestrator {
         };
         await db.createTransaction(txRecord);
 
+        if (isResultEmpty) {
+          // Attempt fallback to alternate approved agent in the same category if available
+          const alternateCandidates = rankAgents(
+            approvedAgents.filter((a) => a.category === currentAgent.category && a.id !== currentAgent.id)
+          );
+
+          if (alternateCandidates.length > 0) {
+            const alternateAgent = alternateCandidates[0];
+            const remainingBudget = await budgetGuard.getRemainingBudget(taskId);
+
+            if (remainingBudget >= alternateAgent.price_usdc) {
+              console.log(`[Orchestrator] Empty result fallback: calling alternate agent ${alternateAgent.name}`);
+              const fallbackResult = await this.executeFallback({
+                taskId,
+                stepNumber: step.stepNumber,
+                parentStepId: stepRecord.id,
+                agent: alternateAgent,
+                actionType: step.actionType,
+                requestPayload,
+              });
+              if (fallbackResult.success) {
+                return { success: true, output: fallbackResult.output, agentUsed: alternateAgent };
+              }
+            }
+          }
+
+          // If no fallback or fallback was also empty, update step
+          await db.updateTaskStep(stepRecord.id, taskId, {
+            status: 'completed',
+            output_payload: resultData,
+            latency_ms: latencyMs,
+            price_paid: currentAgent.price_usdc,
+            tx_hash: txHash || voucherDigest,
+          });
+          await db.recordMetrics(currentAgent.id, true, latencyMs, currentAgent.price_usdc);
+          return { success: false, output: resultData, agentUsed: currentAgent };
+        }
+
         // Update step to completed
         await db.updateTaskStep(stepRecord.id, taskId, {
           status: 'completed',
           output_payload: resultData,
           latency_ms: latencyMs,
           price_paid: currentAgent.price_usdc,
-          tx_hash: txHash,
+          tx_hash: txHash || voucherDigest,
         });
 
         // Record live performance metrics
@@ -438,8 +632,9 @@ export class BuyerAgentOrchestrator {
           token_address: challenge.token || challenge.asset,
           chain_id: challenge.chainId,
           amount_usdc: currentAgent.price_usdc,
-          platform_fee_usdc: receipt.platformFeeUsdc || 0,
+          platform_fee_usdc: platformFee,
           tx_hash: txHash,
+          voucher_digest: voucherDigest,
           explorer_url: explorerUrl,
           payment_status: 'confirmed',
           service_status: 'output_rejected',
@@ -456,7 +651,7 @@ export class BuyerAgentOrchestrator {
           output_payload: resultData,
           latency_ms: latencyMs,
           price_paid: currentAgent.price_usdc,
-          tx_hash: txHash,
+          tx_hash: txHash || voucherDigest,
           error_message: `Output rejected: Failed JSON schema validation (${schemaValidation.errors?.join(', ') || 'invalid format'})`,
         });
 
@@ -603,10 +798,23 @@ export class BuyerAgentOrchestrator {
       await budgetGuard.commitReservation(fallbackReservation.reservationId!);
 
       const receipt = data.paymentReceipt || {};
-      const txHash = receipt.txHash || receipt.voucherDigest || `0x${Buffer.from(authorization.nonce).toString('hex')}`;
-      const explorerUrl = receipt.explorerUrl || `${config.web3.explorerBaseUrl}/tx/${txHash}`;
+      const txHash = receipt.txHash || undefined;
+      const voucherDigest = receipt.voucherDigest || `0x${Buffer.from(authorization.nonce).toString('hex')}`;
+      const explorerUrl = receipt.explorerUrl || `${config.web3.explorerBaseUrl}/tx/${txHash || voucherDigest}`;
 
       const schemaVal = validateSchema(agent.output_schema, data);
+      const isFallbackEmpty = data.total_found === 0 ||
+        (Array.isArray(data.products) && data.products.length === 0) ||
+        (Array.isArray(data.items) && data.items.length === 0);
+
+      const serviceStatus = !schemaVal.isValid
+        ? 'output_rejected'
+        : isFallbackEmpty
+        ? 'empty_result'
+        : 'success';
+
+      const platformFee = receipt.platformFeeUsdc || Number((agent.price_usdc * 0.10).toFixed(4));
+
       if (schemaVal.isValid) {
         const txRecord: Transaction = {
           id: `tx_${taskId}_${stepNumber}_fb`,
@@ -618,11 +826,12 @@ export class BuyerAgentOrchestrator {
           token_address: challenge.token || challenge.asset,
           chain_id: challenge.chainId,
           amount_usdc: agent.price_usdc,
-          platform_fee_usdc: receipt.platformFeeUsdc || 0,
+          platform_fee_usdc: platformFee,
           tx_hash: txHash,
+          voucher_digest: voucherDigest,
           explorer_url: explorerUrl,
           payment_status: 'confirmed',
-          service_status: 'success',
+          service_status: serviceStatus,
           idempotency_key: authorization.nonce,
           nonce: authorization.nonce,
           created_at: new Date().toISOString(),
